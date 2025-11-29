@@ -1,0 +1,82 @@
+
+> backend@1.0.0 start
+> node server.js
+
+
+🚀 Servidor backend corriendo en http://localhost:3000
+📊 Health check: http://localhost:3000/api/health
+🔐 Auth endpoints:
+   - POST http://localhost:3000/api/auth/register
+   - POST http://localhost:3000/api/auth/login
+   - GET  http://localhost:3000/api/auth/profile (protegido)
+
+Connected to SQLite database
+Users table ready
+2025-11-29T16:38:56.884Z - GET /api/clientes
+2025-11-29T16:39:02.370Z - GET /api/clientes
+2025-11-29T16:39:03.608Z - GET /api/productos
+2025-11-29T16:39:03.805Z - GET /api/clientes
+2025-11-29T16:39:03.940Z - GET /api/almacens
+2025-11-29T16:39:04.126Z - GET /api/clientes
+2025-11-29T16:39:04.275Z - GET /api/deliverys
+2025-11-29T16:39:04.474Z - GET /api/clientes
+2025-11-29T16:39:04.806Z - GET /api/ordens
+2025-11-29T16:39:05.014Z - GET /api/clientes
+2025-11-29T16:39:05.581Z - GET /api/clientes
+2025-11-29T16:39:05.786Z - GET /api/clientes
+2025-11-29T16:39:06.434Z - GET /api/productos
+2025-11-29T16:39:06.619Z - GET /api/clientes
+2025-11-29T16:39:07.001Z - GET /api/almacens
+2025-11-29T16:39:07.195Z - GET /api/clientes
+2025-11-29T16:39:08.249Z - GET /api/almacens
+2025-11-29T16:39:08.436Z - GET /api/clientes
+2025-11-29T16:39:09.021Z - GET /api/productos
+2025-11-29T16:39:09.210Z - GET /api/clientes
+2025-11-29T16:39:10.373Z - GET /api/deliverys
+2025-11-29T16:39:10.562Z - GET /api/clientes
+2025-11-29T16:39:11.095Z - GET /api/ordens
+2025-11-29T16:39:11.279Z - GET /api/clientes
+2025-11-29T16:39:13.233Z - GET /api/productos
+2025-11-29T16:39:13.427Z - GET /api/clientes
+2025-11-29T16:39:18.136Z - GET /api/productos
+2025-11-29T16:39:18.325Z - GET /api/clientes
+2025-11-29T16:39:18.766Z - GET /api/almacens
+2025-11-29T16:39:18.959Z - GET /api/clientes
+2025-11-29T16:39:19.256Z - GET /api/deliverys
+2025-11-29T16:39:19.429Z - GET /api/clientes
+2025-11-29T16:39:19.822Z - GET /api/ordens
+2025-11-29T16:39:19.996Z - GET /api/clientes
+2025-11-29T16:39:20.774Z - GET /api/deliverys
+2025-11-29T16:39:21.005Z - GET /api/clientes
+2025-11-29T16:39:21.410Z - GET /api/productos
+2025-11-29T16:39:21.616Z - GET /api/clientes
+2025-11-29T16:39:38.921Z - GET /api/productos
+2025-11-29T16:39:39.114Z - GET /api/clientes
+2025-11-29T16:39:46.817Z - GET /api/clientes
+2025-11-29T16:39:46.974Z - GET /api/clientes
+2025-11-29T16:39:47.019Z - GET /api/clientes
+2025-11-29T16:39:48.476Z - GET /api/productos
+2025-11-29T16:39:48.670Z - GET /api/clientes
+2025-11-29T16:39:48.862Z - GET /api/clientes
+2025-11-29T16:39:49.159Z - GET /api/almacens
+2025-11-29T16:39:49.337Z - GET /api/clientes
+2025-11-29T16:39:49.526Z - GET /api/clientes
+2025-11-29T16:39:49.573Z - GET /api/deliverys
+2025-11-29T16:39:49.720Z - GET /api/clientes
+2025-11-29T16:39:49.882Z - GET /api/clientes
+2025-11-29T16:39:49.930Z - GET /api/ordens
+2025-11-29T16:39:50.074Z - GET /api/clientes
+2025-11-29T16:39:52.117Z - GET /api/clientes
+2025-11-29T16:39:52.481Z - GET /api/productos
+2025-11-29T16:39:52.857Z - GET /api/almacens
+2025-11-29T16:39:57.283Z - GET /api/clientes
+2025-11-29T16:39:59.432Z - GET /api/productos
+2025-11-29T16:39:59.628Z - GET /api/clientes
+2025-11-29T16:40:00.011Z - GET /api/almacens
+2025-11-29T16:40:00.199Z - GET /api/clientes
+2025-11-29T16:40:04.093Z - GET /api/clientes
+2025-11-29T16:40:10.469Z - GET /api/productos
+2025-11-29T16:40:10.834Z - GET /api/almacens
+2025-11-29T16:40:11.215Z - GET /api/deliverys
+2025-11-29T16:40:11.559Z - GET /api/ordens
+2025-11-29T16:40:14.867Z - GET /api/clientes

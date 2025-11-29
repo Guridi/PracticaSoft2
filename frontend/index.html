@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app" v-cloak>
+        <div class="user-navbar">
+            <div class="user-info">
+                <span class="user-icon">👤</span>
+                <div class="user-details">
+                    <strong>{{ user.nombre }}</strong>
+                    <small>{{ user.role }}</small>
+                </div>
+            </div>
+            <button @click="logout" class="btn-logout">Cerrar Sesión</button>
+        </div>
+
+        <div class="container">
+            <header>
+                <h1>🚛 Sistema de Gestión de Combustible</h1>
+                <nav class="nav-tabs">
+                    <button class="tab-btn active" @click="changeTab('cliente')" :class="{active: activeTab === 'cliente'}">Clientes</button>
+                    <button class="tab-btn" @click="changeTab('producto')" :class="{active: activeTab === 'producto'}">Productos</button>
+                    <button class="tab-btn" @click="changeTab('almacen')" :class="{active: activeTab === 'almacen'}">Almacenes</button>
+                    <button class="tab-btn" @click="changeTab('delivery')" :class="{active: activeTab === 'delivery'}">Deliveries</button>
+                    <button class="tab-btn" @click="changeTab('orden')" :class="{active: activeTab === 'orden'}">Órdenes</button>
+                </nav>
+            </header>
+        
+        <main>
+            <!-- Cliente/Administrador/Empleado -->
+            <section class="form-view active" id="cliente">
+                <h2>Cliente/Administrador/Empleado</h2>
+                <form class="data-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="clienteNombre">Nombre:</label>
+                            <input type="text" id="clienteNombre" placeholder="Ingrese nombre">
+                        </div>
+                        <div class="form-group">
+                            <label for="clienteDireccion">Dirección:</label>
+                            <input type="text" id="clienteDireccion" placeholder="Ingrese dirección">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="clienteCedula">Cédula:</label>
+                            <input type="text" id="clienteCedula" placeholder="999-9999999-9">
+                        </div>
+                        <div class="form-group">
+                            <label for="clienteTelefono">Teléfono:</label>
+                            <input type="tel" id="clienteTelefono" placeholder="999-999-9999">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="clienteEmail">Email:</label>
+                            <input type="email" id="clienteEmail" placeholder="correo@ejemplo.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="clienteRango">Permisos/Rango:</label>
+                            <select id="clienteRango">
+                                <option value="">Seleccionar</option>
+                                <option value="cliente">Cliente</option>
+                                <option value="empleado">Empleado</option>
+                                <option value="administrador">Administrador</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-delete">Borrar todo</button>
+                        <button type="submit" class="btn btn-save">Guardar</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Registro de Producto -->
+            <section class="form-view" id="producto">
+                <h2>Registro de producto</h2>
+                <form class="data-form">
+                    <div class="form-group centered">
+                        <label for="productoNombre">Nombre del Producto:</label>
+                        <input type="text" id="productoNombre" placeholder="Ingrese nombre del producto">
+                    </div>
+                    
+                    <div class="form-group centered">
+                        <label for="productoCantidad">Cantidad:</label>
+                        <input type="number" id="productoCantidad" placeholder="9999">
+                    </div>
+                    
+                    <div class="form-group centered">
+                        <label for="productoPrecio">Precio unitario:</label>
+                        <input type="number" id="productoPrecio" placeholder="999999999">
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-delete">Borrar todo</button>
+                        <button type="submit" class="btn btn-save">Guardar</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Registro de Almacén -->
+            <section class="form-view" id="almacen">
+                <h2>Registro de Almacén</h2>
+                <form class="data-form">
+                    <div class="form-group centered">
+                        <label for="almacenNumero">Número de almacén:</label>
+                        <input type="number" id="almacenNumero" placeholder="99">
+                    </div>
+                    
+                    <div class="form-group centered">
+                        <label for="almacenDireccion">Dirección:</label>
+                        <input type="text" id="almacenDireccion" placeholder="Ingrese dirección">
+                    </div>
+                    
+                    <div class="form-group centered">
+                        <label for="almacenTelefono">Teléfono:</label>
+                        <input type="tel" id="almacenTelefono" placeholder="999-999-9999">
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-delete">Borrar todo</button>
+                        <button type="submit" class="btn btn-save">Guardar</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Delivery -->
+            <section class="form-view" id="delivery">
+                <h2>Delivery</h2>
+                <form class="data-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="deliveryNombre">Nombre:</label>
+                            <input type="text" id="deliveryNombre" placeholder="Ingrese nombre">
+                        </div>
+                        <div class="form-group">
+                            <label for="deliveryDireccion">Dirección:</label>
+                            <input type="text" id="deliveryDireccion" placeholder="Ingrese dirección">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="deliveryCedula">Cédula:</label>
+                            <input type="text" id="deliveryCedula" placeholder="999-9999999-9">
+                        </div>
+                        <div class="form-group">
+                            <label for="deliveryTelefono">Teléfono:</label>
+                            <input type="tel" id="deliveryTelefono" placeholder="999-999-9999">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="deliveryEmail">Email:</label>
+                            <input type="email" id="deliveryEmail" placeholder="correo@ejemplo.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="deliveryVehiculo">Vehículo asignado:</label>
+                            <input type="text" id="deliveryVehiculo" placeholder="Placa o identificación">
+                        </div>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-delete">Borrar todo</button>
+                        <button type="submit" class="btn btn-save">Guardar</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Orden de entrega -->
+            <section class="form-view" id="orden">
+                <h2>Orden de entrega</h2>
+                <div class="section-subtitle">Repartidor encargado</div>
+                <form class="data-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ordenNombre">Nombre:</label>
+                            <input type="text" id="ordenNombre" placeholder="Ingrese nombre">
+                        </div>
+                        <div class="form-group">
+                            <label for="ordenTelefono">Teléfono:</label>
+                            <input type="tel" id="ordenTelefono" placeholder="999-999-9999">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ordenCedula">Cédula:</label>
+                            <input type="text" id="ordenCedula" placeholder="999-9999999-9">
+                        </div>
+                        <div class="form-group">
+                            <label for="ordenVehiculo">Vehículo asignado:</label>
+                            <input type="text" id="ordenVehiculo" placeholder="Placa o identificación">
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Product_id</th>
+                                    <th>Nombre del producto</th>
+                                    <th>Volumen</th>
+                                    <th>Dirección de entrega</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>9999999</td>
+                                    <td><input type="text" placeholder="Nombre producto" class="table-input"></td>
+                                    <td>999999</td>
+                                    <td><input type="text" placeholder="Dirección" class="table-input"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-delete">Borrar todo</button>
+                        <button type="submit" class="btn btn-save">Guardar</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Solicitud de entrega -->
+            <section class="form-view" id="solicitud">
+                <h2>Solicitud de entrega</h2>
+                <form class="data-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="solicitudNombre">Nombre:</label>
+                            <input type="text" id="solicitudNombre" placeholder="Ingrese nombre">
+                        </div>
+                        <div class="form-group">
+                            <label for="solicitudTelefono">Teléfono:</label>
+                            <input type="tel" id="solicitudTelefono" placeholder="999-999-9999">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="solicitudCedula">Cédula:</label>
+                            <input type="text" id="solicitudCedula" placeholder="999-9999999-9">
+                        </div>
+                        <div class="form-group">
+                            <label for="solicitudDireccion">Dirección de entrega:</label>
+                            <input type="text" id="solicitudDireccion" placeholder="Ingrese dirección">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="solicitudEmail">Email:</label>
+                            <input type="email" id="solicitudEmail" placeholder="correo@ejemplo.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="solicitudProducto">Producto:</label>
+                            <input type="text" id="solicitudProducto" placeholder="Nombre del producto">
+                        </div>
+                        <div class="form-group">
+                            <label for="solicitudVolumen">Volumen producto:</label>
+                            <input type="number" id="solicitudVolumen" placeholder="999999">
+                        </div>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-delete">Borrar todo</button>
+                        <button type="submit" class="btn btn-save">Guardar</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

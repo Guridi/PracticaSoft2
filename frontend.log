@@ -1,0 +1,5 @@
+127.0.0.1 - - [29/Nov/2025 12:38:56] "GET /dashboard.html?id=17c63fc4-aaab-49f6-b3b0-00d0366bf7d5&vscodeBrowserReqId=1764434336434 HTTP/1.1" 200 -
+127.0.0.1 - - [29/Nov/2025 12:38:56] "GET /app.js HTTP/1.1" 200 -
+127.0.0.1 - - [29/Nov/2025 12:39:46] "GET /dashboard.html HTTP/1.1" 200 -
+127.0.0.1 - - [29/Nov/2025 12:39:46] "GET /app.js HTTP/1.1" 304 -
+127.0.0.1 - - [29/Nov/2025 12:40:03] "GET /dashboard.html HTTP/1.1" 304 -

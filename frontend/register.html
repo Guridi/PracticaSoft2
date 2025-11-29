@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Sistema de Gestión de Combustible</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            max-width: 550px;
+            width: 100%;
+            animation: slideIn 0.5s ease-out;
+            margin: 20px 0;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .auth-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .auth-header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .auth-body {
+            padding: 30px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input.error,
+        .form-group select.error {
+            border-color: #e74c3c;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .auth-footer {
+            text-align: center;
+            padding: 20px 30px 30px;
+            color: #666;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .auth-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-header {
+                padding: 25px 20px;
+            }
+
+            .auth-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .auth-body {
+                padding: 25px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>🚛 Crear Cuenta</h1>
+                <p>Regístrate en el Sistema de Gestión</p>
+            </div>
+
+            <div class="auth-body">
+                <div v-if="alert.show" :class="['alert', `alert-${alert.type}`]">
+                    {{ alert.message }}
+                </div>
+
+                <form @submit.prevent="handleRegister">
+                    <div class="form-group">
+                        <label for="nombre">Nombre Completo *</label>
+                        <input 
+                            type="text" 
+                            id="nombre" 
+                            v-model="form.nombre"
+                            :class="{ error: errors.nombre }"
+                            placeholder="Juan Pérez"
+                            required
+                        >
+                        <span v-if="errors.nombre" class="error-message">{{ errors.nombre }}</span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cedula">Cédula *</label>
+                            <input 
+                                type="text" 
+                                id="cedula" 
+                                v-model="form.cedula"
+                                @input="formatCedula"
+                                :class="{ error: errors.cedula }"
+                                placeholder="000-0000000-0"
+                                maxlength="13"
+                                required
+                            >
+                            <span v-if="errors.cedula" class="error-message">{{ errors.cedula }}</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="telefono">Teléfono</label>
+                            <input 
+                                type="tel" 
+                                id="telefono" 
+                                v-model="form.telefono"
+                                @input="formatTelefono"
+                                :class="{ error: errors.telefono }"
+                                placeholder="000-000-0000"
+                                maxlength="12"
+                            >
+                            <span v-if="errors.telefono" class="error-message">{{ errors.telefono }}</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            v-model="form.email"
+                            :class="{ error: errors.email }"
+                            placeholder="tu@email.com"
+                            required
+                        >
+                        <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="direccion">Dirección</label>
+                        <input 
+                            type="text" 
+                            id="direccion" 
+                            v-model="form.direccion"
+                            :class="{ error: errors.direccion }"
+                            placeholder="Calle, Sector, Ciudad"
+                        >
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password">Contraseña *</label>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                v-model="form.password"
+                                :class="{ error: errors.password }"
+                                placeholder="Mínimo 6 caracteres"
+                                required
+                            >
+                            <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirmar Contraseña *</label>
+                            <input 
+                                type="password" 
+                                id="confirmPassword" 
+                                v-model="form.confirmPassword"
+                                :class="{ error: errors.confirmPassword }"
+                                placeholder="Repite tu contraseña"
+                                required
+                            >
+                            <span v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role">Tipo de Usuario</label>
+                        <select id="role" v-model="form.role">
+                            <option value="cliente">Cliente</option>
+                            <option value="admin">Administrador</option>
+                            <option value="empleado">Empleado</option>
+                            <option value="transportista">Transportista</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" :disabled="loading">
+                        <span v-if="loading" class="loading-spinner"></span>
+                        {{ loading ? 'Registrando...' : 'Crear Cuenta' }}
+                    </button>
+                </form>
+            </div>
+
+            <div class="auth-footer">
+                ¿Ya tienes una cuenta? <a href="login.html">Inicia sesión aquí</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    form: {
+                        nombre: '',
+                        cedula: '',
+                        telefono: '',
+                        email: '',
+                        direccion: '',
+                        password: '',
+                        confirmPassword: '',
+                        role: 'cliente'
+                    },
+                    errors: {},
+                    loading: false,
+                    alert: {
+                        show: false,
+                        type: 'success',
+                        message: ''
+                    }
+                };
+            },
+            methods: {
+                formatCedula(event) {
+                    let value = event.target.value.replace(/\D/g, '');
+                    if (value.length >= 3) {
+                        value = value.slice(0, 3) + '-' + value.slice(3);
+                    }
+                    if (value.length >= 11) {
+                        value = value.slice(0, 11) + '-' + value.slice(11, 12);
+                    }
+                    this.form.cedula = value;
+                },
+                formatTelefono(event) {
+                    let value = event.target.value.replace(/\D/g, '');
+                    if (value.length >= 3) {
+                        value = value.slice(0, 3) + '-' + value.slice(3);
+                    }
+                    if (value.length >= 7) {
+                        value = value.slice(0, 7) + '-' + value.slice(7, 11);
+                    }
+                    this.form.telefono = value;
+                },
+                validateForm() {
+                    this.errors = {};
+                    let isValid = true;
+
+                    if (!this.form.nombre.trim()) {
+                        this.errors.nombre = 'El nombre es requerido';
+                        isValid = false;
+                    }
+
+                    if (!this.form.cedula) {
+                        this.errors.cedula = 'La cédula es requerida';
+                        isValid = false;
+                    } else if (!/^\d{3}-\d{7}-\d{1}$/.test(this.form.cedula)) {
+                        this.errors.cedula = 'Formato inválido (000-0000000-0)';
+                        isValid = false;
+                    }
+
+                    if (!this.form.email) {
+                        this.errors.email = 'El email es requerido';
+                        isValid = false;
+                    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email)) {
+                        this.errors.email = 'Email inválido';
+                        isValid = false;
+                    }
+
+                    if (!this.form.password) {
+                        this.errors.password = 'La contraseña es requerida';
+                        isValid = false;
+                    } else if (this.form.password.length < 6) {
+                        this.errors.password = 'Mínimo 6 caracteres';
+                        isValid = false;
+                    }
+
+                    if (this.form.password !== this.form.confirmPassword) {
+                        this.errors.confirmPassword = 'Las contraseñas no coinciden';
+                        isValid = false;
+                    }
+
+                    return isValid;
+                },
+                showAlert(type, message) {
+                    this.alert = { show: true, type, message };
+                    setTimeout(() => {
+                        this.alert.show = false;
+                    }, 5000);
+                },
+                async handleRegister() {
+                    if (!this.validateForm()) {
+                        return;
+                    }
+
+                    this.loading = true;
+
+                    try {
+                        const { confirmPassword, ...dataToSend } = this.form;
+
+                        const response = await fetch('http://localhost:3000/api/auth/register', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(dataToSend)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            // Guardar token y datos del usuario
+                            localStorage.setItem('authToken', data.data.token);
+                            localStorage.setItem('user', JSON.stringify(data.data.user));
+                            
+                            this.showAlert('success', '¡Registro exitoso! Redirigiendo...');
+                            
+                            // Redirigir al dashboard después de 1.5 segundos
+                            setTimeout(() => {
+                                window.location.href = 'dashboard.html';
+                            }, 1500);
+                        } else {
+                            this.showAlert('error', data.message || 'Error al registrar usuario');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        this.showAlert('error', 'Error de conexión. Verifica que el servidor esté corriendo.');
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            },
+            mounted() {
+                // Si ya hay sesión, redirigir al dashboard
+                if (localStorage.getItem('authToken')) {
+                    window.location.href = 'dashboard.html';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Gestión de Combustible</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            max-width: 450px;
+            width: 100%;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .auth-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .auth-header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .auth-body {
+            padding: 40px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input.error {
+            border-color: #e74c3c;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            position: relative;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .auth-footer {
+            text-align: center;
+            padding: 20px 30px 30px;
+            color: #666;
+        }
+
+        .auth-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .auth-header {
+                padding: 30px 20px;
+            }
+
+            .auth-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .auth-body, .auth-footer {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>🚛 Sistema de Gestión</h1>
+                <p>Gestión de Pedidos y Envíos de Combustible</p>
+            </div>
+
+            <div class="auth-body">
+                <div v-if="alert.show" :class="['alert', `alert-${alert.type}`]">
+                    {{ alert.message }}
+                </div>
+
+                <form @submit.prevent="handleLogin">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            v-model="form.email"
+                            :class="{ error: errors.email }"
+                            placeholder="tu@email.com"
+                            required
+                        >
+                        <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            v-model="form.password"
+                            :class="{ error: errors.password }"
+                            placeholder="Tu contraseña"
+                            required
+                        >
+                        <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" :disabled="loading">
+                        <span v-if="loading" class="loading-spinner"></span>
+                        {{ loading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
+                    </button>
+                </form>
+            </div>
+
+            <div class="auth-footer">
+                ¿No tienes una cuenta? <a href="register.html">Regístrate aquí</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    form: {
+                        email: '',
+                        password: ''
+                    },
+                    errors: {},
+                    loading: false,
+                    alert: {
+                        show: false,
+                        type: 'success',
+                        message: ''
+                    }
+                };
+            },
+            methods: {
+                validateForm() {
+                    this.errors = {};
+                    let isValid = true;
+
+                    if (!this.form.email) {
+                        this.errors.email = 'El email es requerido';
+                        isValid = false;
+                    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email)) {
+                        this.errors.email = 'Email inválido';
+                        isValid = false;
+                    }
+
+                    if (!this.form.password) {
+                        this.errors.password = 'La contraseña es requerida';
+                        isValid = false;
+                    }
+
+                    return isValid;
+                },
+                showAlert(type, message) {
+                    this.alert = { show: true, type, message };
+                    setTimeout(() => {
+                        this.alert.show = false;
+                    }, 5000);
+                },
+                async handleLogin() {
+                    if (!this.validateForm()) {
+                        return;
+                    }
+
+                    this.loading = true;
+
+                    try {
+                        const response = await fetch('http://localhost:3000/api/auth/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.form)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            // Guardar token y datos del usuario
+                            localStorage.setItem('authToken', data.data.token);
+                            localStorage.setItem('user', JSON.stringify(data.data.user));
+                            
+                            this.showAlert('success', '¡Login exitoso! Redirigiendo...');
+                            
+                            // Redirigir al dashboard después de 1 segundo
+                            setTimeout(() => {
+                                window.location.href = 'dashboard.html';
+                            }, 1000);
+                        } else {
+                            this.showAlert('error', data.message || 'Error al iniciar sesión');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        this.showAlert('error', 'Error de conexión. Verifica que el servidor esté corriendo.');
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            },
+            mounted() {
+                // Si ya hay sesión, redirigir al dashboard
+                if (localStorage.getItem('authToken')) {
+                    window.location.href = 'dashboard.html';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
