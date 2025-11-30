@@ -67,9 +67,20 @@ function initDatabase() {
       nombre TEXT NOT NULL,
       ubicacion TEXT NOT NULL,
       capacidad_total REAL NOT NULL,
-      capacidad_disponible REAL NOT NULL,
-      tipo_producto TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Tabla de inventario de almacenes (productos almacenados)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS inventario_almacen (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      almacen_id INTEGER NOT NULL,
+      producto_id INTEGER NOT NULL,
+      cantidad REAL NOT NULL,
+      fecha_ingreso DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (almacen_id) REFERENCES almacenes(id) ON DELETE CASCADE,
+      FOREIGN KEY (producto_id) REFERENCES productos(id)
     )
   `);
 

@@ -818,7 +818,6 @@
                                     <th>Ubicación</th>
                                     <th>Capacidad Total</th>
                                     <th>Disponible</th>
-                                    <th>Tipo</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -830,9 +829,9 @@
                                     <td>{{ almacen.ubicacion }}</td>
                                     <td>{{ almacen.capacidad_total }}</td>
                                     <td>{{ almacen.capacidad_disponible }}</td>
-                                    <td>{{ almacen.tipo_producto }}</td>
                                     <td>
                                         <div class="table-actions">
+                                            <button @click="openInventarioModal(almacen)" class="btn-small" style="background: #3498db;">📦 Inventario</button>
                                             <button @click="editItem(almacen, 'almacen')" class="btn-small btn-edit">Editar</button>
                                             <button @click="deleteItem(almacen.id, 'almacenes')" class="btn-small btn-delete-small">Eliminar</button>
                                         </div>
@@ -1096,20 +1095,6 @@
                                 <label>Capacidad Total *</label>
                                 <input type="number" step="0.01" v-model="currentForm.capacidad_total" required>
                             </div>
-                            <div class="form-group">
-                                <label>Capacidad Disponible *</label>
-                                <input type="number" step="0.01" v-model="currentForm.capacidad_disponible" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Tipo de Producto *</label>
-                            <select v-model="currentForm.tipo_producto" required>
-                                <option value="">Seleccionar</option>
-                                <option value="Gasolina">Gasolina</option>
-                                <option value="Diésel">Diésel</option>
-                                <option value="Kerosene">Kerosene</option>
-                                <option value="Mixto">Mixto</option>
-                            </select>
                         </div>
                     </form>
 
@@ -1216,9 +1201,97 @@
                 </div>
             </div>
         </div>
+
+        <!-- MODAL INVENTARIO -->
+        <div v-if="showInventarioModal" class="modal-overlay" @click.self="closeInventarioModal">
+            <div class="modal" style="max-width: 800px;" @click.stop>
+                <div class="modal-header">
+                    <h2>📦 Inventario: {{ currentAlmacen.nombre }}</h2>
+                    <button @click="closeInventarioModal" class="close-btn">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <div style="background: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-around; align-items: center; gap: 20px;">
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px; flex: 1;">
+                                <div style="color: #7f8c8d; font-size: 0.9rem;">Capacidad Total</div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: #34495e;">{{ currentAlmacen.capacidad_total }}</div>
+                            </div>
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px; flex: 1;">
+                                <div style="color: #e74c3c; font-size: 0.9rem;">Usado</div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: #e74c3c;">{{ currentAlmacen.capacidad_total - currentAlmacen.capacidad_disponible }}</div>
+                            </div>
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px; flex: 1;">
+                                <div style="color: #27ae60; font-size: 0.9rem;">Disponible</div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: #27ae60;">{{ currentAlmacen.capacidad_disponible }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario agregar producto -->
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px;">➕ Agregar Producto</h3>
+                        <form @submit.prevent="addProductoToInventario" style="display: flex; gap: 10px; align-items: end;">
+                            <div style="flex: 1;">
+                                <label>Producto *</label>
+                                <select v-model="inventarioForm.producto_id" required>
+                                    <option value="">Seleccionar producto</option>
+                                    <option v-for="producto in productos" :key="producto.id" :value="producto.id">
+                                        {{ producto.nombre }} ({{ producto.tipo }})
+                                    </option>
+                                </select>
+                            </div>
+                            <div style="flex: 0.5;">
+                                <label>Cantidad *</label>
+                                <input type="number" step="0.01" v-model="inventarioForm.cantidad" required min="0.01">
+                            </div>
+                            <button type="submit" class="btn btn-success" :disabled="loading">
+                                {{ loading ? 'Agregando...' : 'Agregar' }}
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Lista de productos en inventario -->
+                    <h3 style="margin-bottom: 15px;">📋 Productos Almacenados</h3>
+                    <table v-if="inventario.length > 0" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Tipo</th>
+                                <th>Cantidad</th>
+                                <th>Unidad</th>
+                                <th>Fecha Ingreso</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="item in inventario" :key="item.id">
+                                <td>{{ item.producto_nombre }}</td>
+                                <td>{{ item.tipo }}</td>
+                                <td>{{ item.cantidad }}</td>
+                                <td>{{ item.unidad }}</td>
+                                <td>{{ new Date(item.fecha_ingreso).toLocaleDateString() }}</td>
+                                <td>
+                                    <button @click="deleteInventarioItem(item.id)" class="btn-small btn-delete-small">
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div v-else class="empty-state">
+                        <p>No hay productos en este almacén</p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" @click="closeInventarioModal" class="btn btn-secondary">Cerrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js?v=6"></script>
 </body>
 </html>

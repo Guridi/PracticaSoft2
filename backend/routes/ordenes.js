@@ -17,7 +17,7 @@ router.get('/', authenticateToken, (req, res) => {
     LEFT JOIN productos p ON o.producto_id = p.id
     LEFT JOIN deliveries d ON o.delivery_id = d.id
     LEFT JOIN almacenes a ON o.almacen_id = a.id
-    ORDER BY o.created_at DESC
+    ORDER BY o.fecha_solicitud DESC
   `;
   
   db.all(query, [], (err, rows) => {
@@ -70,51 +70,61 @@ router.post('/', authenticateToken, (req, res) => {
     });
   }
 
-  // Verificar disponibilidad en almacén
-  db.get('SELECT capacidad_disponible FROM almacenes WHERE id = ?', [almacen_id], (err, almacen) => {
-    if (err || !almacen) {
-      return res.status(400).json({ success: false, message: 'Almacén no encontrado' });
-    }
+  // Verificar disponibilidad del producto en el almacén
+  db.get(
+    'SELECT cantidad FROM inventario_almacen WHERE almacen_id = ? AND producto_id = ?',
+    [almacen_id, producto_id],
+    (err, inventario) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Error al verificar inventario' });
+      }
 
-    if (almacen.capacidad_disponible < volumen_solicitado) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Capacidad insuficiente en el almacén' 
-      });
-    }
-
-    const total = precio_unitario ? precio_unitario * volumen_solicitado : null;
-
-    db.run(
-      `INSERT INTO ordenes (
-        cliente_id, producto_id, delivery_id, almacen_id, 
-        volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio,
-        ventana_entrega_fin, precio_unitario, total, notas
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        cliente_id, producto_id, delivery_id || null, almacen_id,
-        volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio || null,
-        ventana_entrega_fin || null, precio_unitario || null, total, notas || ''
-      ],
-      function(err) {
-        if (err) {
-          return res.status(500).json({ success: false, message: 'Error al crear orden' });
-        }
-
-        // Actualizar capacidad del almacén
-        db.run(
-          'UPDATE almacenes SET capacidad_disponible = capacidad_disponible - ? WHERE id = ?',
-          [volumen_solicitado, almacen_id]
-        );
-
-        res.status(201).json({
-          success: true,
-          message: 'Orden creada exitosamente',
-          data: { id: this.lastID }
+      if (!inventario || inventario.cantidad < volumen_solicitado) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Producto insuficiente en almacén. Disponible: ${inventario ? inventario.cantidad : 0}` 
         });
       }
-    );
-  });
+
+      const total = precio_unitario ? precio_unitario * volumen_solicitado : null;
+
+      // Reducir cantidad del inventario (producto sale del almacén)
+      db.run(
+        'UPDATE inventario_almacen SET cantidad = cantidad - ? WHERE almacen_id = ? AND producto_id = ?',
+        [volumen_solicitado, almacen_id, producto_id],
+        function(err) {
+          if (err) {
+            return res.status(500).json({ success: false, message: 'Error al actualizar inventario' });
+          }
+
+          // Crear la orden
+          db.run(
+            `INSERT INTO ordenes (
+              cliente_id, producto_id, delivery_id, almacen_id, 
+              volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio,
+              ventana_entrega_fin, precio_unitario, total, notas
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              cliente_id, producto_id, delivery_id || null, almacen_id,
+              volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio || null,
+              ventana_entrega_fin || null, precio_unitario || null, total, notas || ''
+            ],
+            function(err) {
+              if (err) {
+                return res.status(500).json({ success: false, message: 'Error al crear orden' });
+              }
+
+              res.status(201).json({
+                success: true,
+                message: 'Orden creada exitosamente',
+                data: { id: this.lastID }
+              });
+            }
+          );
+        }
+      );
+    }
+  );
 });
 
 // PUT - Actualizar una orden
@@ -154,8 +164,9 @@ router.put('/:id', authenticateToken, (req, res) => {
 
 // DELETE - Eliminar una orden
 router.delete('/:id', authenticateToken, (req, res) => {
-  // Primero obtener la orden para devolver el volumen al almacén
-  db.get('SELECT almacen_id, volumen_solicitado, estado FROM ordenes WHERE id = ?', 
+  // Primero obtener la orden para devolver el producto al inventario
+  db.get(
+    'SELECT almacen_id, producto_id, volumen_solicitado, estado FROM ordenes WHERE id = ?', 
     [req.params.id], 
     (err, orden) => {
       if (err) {
@@ -170,11 +181,18 @@ router.delete('/:id', authenticateToken, (req, res) => {
           return res.status(500).json({ success: false, message: 'Error al eliminar orden' });
         }
 
-        // Si la orden no fue entregada, devolver el volumen al almacén
+        // Si la orden no fue entregada, devolver el producto al inventario
         if (orden.estado !== 'entregado') {
           db.run(
-            'UPDATE almacenes SET capacidad_disponible = capacidad_disponible + ? WHERE id = ?',
-            [orden.volumen_solicitado, orden.almacen_id]
+            `UPDATE inventario_almacen 
+             SET cantidad = cantidad + ? 
+             WHERE almacen_id = ? AND producto_id = ?`,
+            [orden.volumen_solicitado, orden.almacen_id, orden.producto_id],
+            (err) => {
+              if (err) {
+                console.error('Error al devolver producto al inventario:', err);
+              }
+            }
           );
         }
 

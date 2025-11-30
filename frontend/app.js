@@ -25,6 +25,15 @@ createApp({
       // Formulario actual
       currentForm: {},
       
+      // Modal inventario
+      showInventarioModal: false,
+      currentAlmacen: {},
+      inventario: [],
+      inventarioForm: {
+        producto_id: '',
+        cantidad: ''
+      },
+      
       // Estados
       loading: false,
       editingId: null,
@@ -105,9 +114,27 @@ createApp({
     async loadData(module) {
       this.loading = true;
       try {
-        const result = await this.apiRequest('GET', `/${module}s`);
+        // Mapa de endpoints para casos especiales
+        const endpointMap = {
+          'almacen': '/almacenes',
+          'orden': '/ordenes',
+          'delivery': '/deliveries'
+        };
+        const endpoint = endpointMap[module] || `/${module}s`;
+        
+        // Mapa de módulos a propiedades de data
+        const propertyMap = {
+          'almacen': 'almacenes',
+          'orden': 'ordenes',
+          'delivery': 'deliveries',
+          'cliente': 'clientes',
+          'producto': 'productos'
+        };
+        const property = propertyMap[module] || `${module}s`;
+        
+        const result = await this.apiRequest('GET', endpoint);
         if (result.success) {
-          this[`${module}s`] = result.data;
+          this[property] = result.data;
           
           // Cargar datos relacionados para órdenes
           if (module === 'orden') {
@@ -148,7 +175,7 @@ createApp({
       const config = {
         cliente: { title: 'Cliente', icon: '��', form: { nombre: '', direccion: '', cedula: '', telefono: '', email: '', condiciones_comerciales: '' }},
         producto: { title: 'Producto', icon: '⛽', form: { nombre: '', tipo: '', precio: '', unidad: '', descripcion: '' }},
-        almacen: { title: 'Almacén', icon: '🏭', form: { nombre: '', ubicacion: '', capacidad_total: '', capacidad_disponible: '', tipo_producto: '' }},
+        almacen: { title: 'Almacén', icon: '🏭', form: { nombre: '', ubicacion: '', capacidad_total: '' }},
         chofer: { title: 'Chofer', icon: '🚗', form: { nombre: '', cedula: '', telefono: '', licencia: '', vehiculo_placa: '', vehiculo_capacidad: '' }},
         orden: { title: 'Orden', icon: '📋', form: { cliente_id: '', producto_id: '', delivery_id: '', almacen_id: '', volumen_solicitado: '', ubicacion_entrega: '', precio_unitario: '', notas: '' }}
       };
@@ -327,6 +354,110 @@ createApp({
       if (value.length >= 3) value = value.slice(0, 3) + '-' + value.slice(3);
       if (value.length >= 7) value = value.slice(0, 7) + '-' + value.slice(7, 11);
       this.currentForm.telefono = value;
+    },
+    
+    // Métodos para gestión de inventario
+    async openInventarioModal(almacen) {
+      this.currentAlmacen = almacen;
+      this.showInventarioModal = true;
+      this.inventarioForm = { producto_id: '', cantidad: '' };
+      await this.loadInventarioData(almacen.id);
+      
+      // Cargar productos si no están cargados
+      if (this.productos.length === 0) {
+        const result = await this.apiRequest('GET', '/productos');
+        if (result.success) {
+          this.productos = result.data;
+        }
+      }
+    },
+    
+    closeInventarioModal() {
+      this.showInventarioModal = false;
+      this.currentAlmacen = {};
+      this.inventario = [];
+      this.inventarioForm = { producto_id: '', cantidad: '' };
+    },
+    
+    async loadInventarioData(almacenId) {
+      this.loading = true;
+      try {
+        const result = await this.apiRequest('GET', `/inventario/almacen/${almacenId}`);
+        if (result.success) {
+          this.inventario = result.data;
+        }
+      } catch (error) {
+        console.error('Error al cargar inventario:', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    async addProductoToInventario() {
+      if (!this.inventarioForm.producto_id || !this.inventarioForm.cantidad) {
+        alert('Por favor completa todos los campos');
+        return;
+      }
+      
+      this.loading = true;
+      try {
+        const result = await this.apiRequest('POST', '/inventario', {
+          almacen_id: this.currentAlmacen.id,
+          producto_id: parseInt(this.inventarioForm.producto_id),
+          cantidad: parseFloat(this.inventarioForm.cantidad)
+        });
+        
+        if (result.success) {
+          this.showAlert('success', 'Producto agregado exitosamente');
+          this.inventarioForm = { producto_id: '', cantidad: '' };
+          
+          // Recargar inventario y almacenes
+          await this.loadInventarioData(this.currentAlmacen.id);
+          await this.loadData('almacen');
+          
+          // Actualizar almacén actual
+          const almacenUpdated = this.almacenes.find(a => a.id === this.currentAlmacen.id);
+          if (almacenUpdated) {
+            this.currentAlmacen = almacenUpdated;
+          }
+        } else {
+          alert(result.message || 'Error al agregar producto');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al agregar producto');
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    async deleteInventarioItem(id) {
+      if (!confirm('¿Eliminar este producto del inventario?')) return;
+      
+      this.loading = true;
+      try {
+        const result = await this.apiRequest('DELETE', `/inventario/${id}`);
+        if (result.success) {
+          this.showAlert('success', 'Producto eliminado del inventario');
+          
+          // Recargar inventario y almacenes
+          await this.loadInventarioData(this.currentAlmacen.id);
+          await this.loadData('almacen');
+          
+          // Actualizar almacén actual
+          const almacenUpdated = this.almacenes.find(a => a.id === this.currentAlmacen.id);
+          if (almacenUpdated) {
+            this.currentAlmacen = almacenUpdated;
+          }
+        } else {
+          alert(result.message || 'Error al eliminar producto');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar producto');
+      } finally {
+        this.loading = false;
+      }
     }
   },
   

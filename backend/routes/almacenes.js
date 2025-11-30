@@ -6,12 +6,22 @@ const router = express.Router();
 
 // GET - Obtener todos los almacenes
 router.get('/', authenticateToken, (req, res) => {
-  db.all('SELECT * FROM almacenes ORDER BY created_at DESC', [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: 'Error al obtener almacenes' });
+  db.all(
+    `SELECT a.*, 
+            COALESCE(SUM(i.cantidad), 0) as usado,
+            (a.capacidad_total - COALESCE(SUM(i.cantidad), 0)) as capacidad_disponible
+     FROM almacenes a
+     LEFT JOIN inventario_almacen i ON a.id = i.almacen_id
+     GROUP BY a.id
+     ORDER BY a.created_at DESC`,
+    [],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Error al obtener almacenes' });
+      }
+      res.json({ success: true, data: rows });
     }
-    res.json({ success: true, data: rows });
-  });
+  );
 });
 
 // GET - Obtener un almacén por ID
@@ -29,9 +39,9 @@ router.get('/:id', authenticateToken, (req, res) => {
 
 // POST - Crear un almacén
 router.post('/', authenticateToken, (req, res) => {
-  const { nombre, ubicacion, capacidad_total, capacidad_disponible, tipo_producto } = req.body;
+  const { nombre, ubicacion, capacidad_total } = req.body;
 
-  if (!nombre || !ubicacion || !capacidad_total || capacidad_disponible === undefined || !tipo_producto) {
+  if (!nombre || !ubicacion || !capacidad_total) {
     return res.status(400).json({ 
       success: false, 
       message: 'Todos los campos son requeridos' 
@@ -39,8 +49,8 @@ router.post('/', authenticateToken, (req, res) => {
   }
 
   db.run(
-    'INSERT INTO almacenes (nombre, ubicacion, capacidad_total, capacidad_disponible, tipo_producto) VALUES (?, ?, ?, ?, ?)',
-    [nombre, ubicacion, capacidad_total, capacidad_disponible, tipo_producto],
+    'INSERT INTO almacenes (nombre, ubicacion, capacidad_total) VALUES (?, ?, ?)',
+    [nombre, ubicacion, capacidad_total],
     function(err) {
       if (err) {
         return res.status(500).json({ success: false, message: 'Error al crear almacén' });
@@ -48,7 +58,7 @@ router.post('/', authenticateToken, (req, res) => {
       res.status(201).json({
         success: true,
         message: 'Almacén creado exitosamente',
-        data: { id: this.lastID, nombre, ubicacion, capacidad_total, capacidad_disponible, tipo_producto }
+        data: { id: this.lastID, nombre, ubicacion, capacidad_total }
       });
     }
   );
@@ -56,11 +66,11 @@ router.post('/', authenticateToken, (req, res) => {
 
 // PUT - Actualizar un almacén
 router.put('/:id', authenticateToken, (req, res) => {
-  const { nombre, ubicacion, capacidad_total, capacidad_disponible, tipo_producto } = req.body;
+  const { nombre, ubicacion, capacidad_total } = req.body;
 
   db.run(
-    'UPDATE almacenes SET nombre = ?, ubicacion = ?, capacidad_total = ?, capacidad_disponible = ?, tipo_producto = ? WHERE id = ?',
-    [nombre, ubicacion, capacidad_total, capacidad_disponible, tipo_producto, req.params.id],
+    'UPDATE almacenes SET nombre = ?, ubicacion = ?, capacidad_total = ? WHERE id = ?',
+    [nombre, ubicacion, capacidad_total, req.params.id],
     function(err) {
       if (err) {
         return res.status(500).json({ success: false, message: 'Error al actualizar almacén' });
