@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../database');
 const { authenticateToken } = require('./auth');
+const { authorize } = require('../middleware/authorize');
 
 const router = express.Router();
 
@@ -56,7 +57,7 @@ router.get('/:id', authenticateToken, (req, res) => {
 });
 
 // POST - Crear una orden
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, authorize(['admin', 'empleado', 'cliente']), (req, res) => {
   const { 
     cliente_id, producto_id, delivery_id, almacen_id, 
     volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio, 
@@ -128,7 +129,7 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // PUT - Actualizar una orden
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, authorize(['admin', 'empleado', 'transportista']), (req, res) => {
   const { 
     cliente_id, producto_id, delivery_id, almacen_id,
     volumen_solicitado, volumen_entregado, estado,
@@ -163,7 +164,7 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // DELETE - Eliminar una orden
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, authorize(['admin']), (req, res) => {
   // Primero obtener la orden para devolver el producto al inventario
   db.get(
     'SELECT almacen_id, producto_id, volumen_solicitado, estado FROM ordenes WHERE id = ?', 

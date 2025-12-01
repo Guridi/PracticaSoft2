@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../database');
 const { authenticateToken } = require('./auth');
+const { authorize } = require('../middleware/authorize');
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.get('/:id', authenticateToken, (req, res) => {
 });
 
 // POST - Crear un delivery
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, authorize(['admin']), (req, res) => {
   const { nombre, cedula, telefono, licencia, vehiculo_placa, vehiculo_capacidad } = req.body;
 
   if (!nombre || !cedula || !telefono || !licencia || !vehiculo_placa || !vehiculo_capacidad) {
@@ -58,7 +59,7 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // PUT - Actualizar un delivery
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, authorize(['admin']), (req, res) => {
   const { nombre, cedula, telefono, licencia, vehiculo_placa, vehiculo_capacidad } = req.body;
 
   db.run(
@@ -77,7 +78,7 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // DELETE - Eliminar un delivery
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, authorize(['admin']), (req, res) => {
   db.run('DELETE FROM deliveries WHERE id = ?', [req.params.id], function(err) {
     if (err) {
       return res.status(500).json({ success: false, message: 'Error al eliminar delivery' });

@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Gestión</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        [v-cloak] { display: none; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+        }
+
+        /* Navbar Superior */
+        .top-navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 70px;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .navbar-brand span {
+            font-size: 2rem;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-info strong {
+            display: block;
+            font-size: 1rem;
+        }
+
+        .user-info small {
+            opacity: 0.9;
+            text-transform: capitalize;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Layout Principal */
+        .main-container {
+            display: flex;
+            margin-top: 70px;
+            min-height: calc(100vh - 70px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            position: fixed;
+            left: 0;
+            top: 70px;
+            bottom: 0;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-item {
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            color: #5a6c7d;
+        }
+
+        .menu-item:hover {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+
+        .menu-item.active {
+            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(255,255,255,0) 100%);
+            border-left-color: #667eea;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .menu-item .icon {
+            font-size: 1.3rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Contenido Principal */
+        .content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 30px;
+            background: #f5f7fa;
+        }
+
+        .content-header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .content-header h1 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Filtro de Estado */
+        .filter-section {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #e9ecef;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #5a6c7d;
+        }
+
+        .filter-badge:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .filter-badge.active {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231,76,60,0.4);
+        }
+
+        .btn-danger:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        /* Tabla */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .data-table th {
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table th:first-child {
+            width: 40px;
+        }
+
+        .data-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f3f5;
+            color: #495057;
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete-small {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-delete-small:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+
+        /* Estados vacíos */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #95a5a6;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #7f8c8d;
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #95a5a6;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-close:hover {
+            background: #f8f9fa;
+            color: #2c3e50;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Toast Alert */
+        .toast {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            animation: slideInRight 0.3s ease-out;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .toast.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .toast .icon {
+            font-size: 1.3rem;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 0;
+                transform: translateX(-100%);
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <!-- Navbar Superior -->
+        <nav class="top-navbar">
+            <div class="navbar-brand">
+                <span>🚛</span>
+                <div>Sistema de Gestión</div>
+            </div>
+            <div class="user-section">
+                <div class="user-info">
+                    <strong>{{ user.nombre }}</strong>
+                    <small>{{ user.role }}</small>
+                </div>
+                <button type="button" @click="logout" class="btn-logout">Cerrar Sesión</button>
+            </div>
+        </nav>
+
+        <!-- Toast -->
+        <div v-if="alert.show" :class="['toast', alert.type]">
+            <span class="icon">{{ alert.type === 'success' ? '✓' : '✕' }}</span>
+            <span>{{ alert.message }}</span>
+        </div>
+
+        <!-- Layout Principal -->
+        <div class="main-container">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <nav class="sidebar-menu">
+                    <div class="menu-item" :class="{active: activeSection === 'clientes'}" @click="changeSection('clientes')">
+                        <span class="icon">👥</span>
+                        <span>Clientes</span>
+                    </div>
+                    <div class="menu-item" :class="{active: activeSection === 'productos'}" @click="changeSection('productos')">
+                        <span class="icon">⛽</span>
+                        <span>Productos</span>
+                    </div>
+                    <div class="menu-item" :class="{active: activeSection === 'almacenes'}" @click="changeSection('almacenes')">
+                        <span class="icon">🏭</span>
+                        <span>Almacenes</span>
+                    </div>
+                    <div class="menu-item" :class="{active: activeSection === 'ordenes'}" @click="changeSection('ordenes')">
+                        <span class="icon">📋</span>
+                        <span>Órdenes</span>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Contenido Principal -->
+            <main class="content">
+                <!-- SECCIÓN CLIENTES -->
+                <div v-if="activeSection === 'clientes'">
+                    <div class="content-header">
+                        <div class="header-top">
+                            <h1><span>👥</span> Gestión de Clientes</h1>
+                            <div class="action-buttons">
+                                <button @click="openModal('cliente')" class="btn btn-primary">
+                                    <span>+</span> Nuevo Cliente
+                                </button>
+                                <button @click="deleteSelected('clientes')" :disabled="!selectedItems.length" class="btn btn-danger">
+                                    <span>🗑️</span> Eliminar ({{ selectedItems.length }})
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div v-if="loading" class="loading">
+                            <div class="spinner"></div>
+                            <p>Cargando clientes...</p>
+                        </div>
+
+                        <table v-else-if="clientes.length > 0" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" @change="toggleSelectAll('clientes')" :checked="allSelected('clientes')"></th>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Cédula</th>
+                                    <th>Teléfono</th>
+                                    <th>Email</th>
+                                    <th>Dirección</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="cliente in clientes" :key="cliente.id">
+                                    <td><input type="checkbox" :value="cliente.id" v-model="selectedItems"></td>
+                                    <td>{{ cliente.id }}</td>
+                                    <td>{{ cliente.nombre }}</td>
+                                    <td>{{ cliente.cedula }}</td>
+                                    <td>{{ cliente.telefono }}</td>
+                                    <td>{{ cliente.email || 'N/A' }}</td>
+                                    <td>{{ cliente.direccion }}</td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button @click="editItem(cliente, 'cliente')" class="btn-small btn-edit">Editar</button>
+                                            <button @click="deleteItem(cliente.id, 'clientes')" class="btn-small btn-delete-small">Eliminar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div v-else class="empty-state">
+                            <div class="icon">📋</div>
+                            <h3>No hay clientes registrados</h3>
+                            <p>Comienza agregando tu primer cliente</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN PRODUCTOS -->
+                <div v-if="activeSection === 'productos'">
+                    <div class="content-header">
+                        <div class="header-top">
+                            <h1><span>⛽</span> Gestión de Productos</h1>
+                            <div class="action-buttons">
+                                <button @click="openModal('producto')" class="btn btn-primary">
+                                    <span>+</span> Nuevo Producto
+                                </button>
+                                <button @click="deleteSelected('productos')" :disabled="!selectedItems.length" class="btn btn-danger">
+                                    <span>🗑️</span> Eliminar ({{ selectedItems.length }})
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div v-if="loading" class="loading">
+                            <div class="spinner"></div>
+                            <p>Cargando productos...</p>
+                        </div>
+
+                        <table v-else-if="productos.length > 0" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" @change="toggleSelectAll('productos')" :checked="allSelected('productos')"></th>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Tipo</th>
+                                    <th>Precio</th>
+                                    <th>Unidad</th>
+                                    <th>Descripción</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="producto in productos" :key="producto.id">
+                                    <td><input type="checkbox" :value="producto.id" v-model="selectedItems"></td>
+                                    <td>{{ producto.id }}</td>
+                                    <td>{{ producto.nombre }}</td>
+                                    <td>{{ producto.tipo }}</td>
+                                    <td>${{ producto.precio }}</td>
+                                    <td>{{ producto.unidad }}</td>
+                                    <td>{{ producto.descripcion || 'N/A' }}</td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button @click="editItem(producto, 'producto')" class="btn-small btn-edit">Editar</button>
+                                            <button @click="deleteItem(producto.id, 'productos')" class="btn-small btn-delete-small">Eliminar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div v-else class="empty-state">
+                            <div class="icon">⛽</div>
+                            <h3>No hay productos registrados</h3>
+                            <p>Comienza agregando tu primer producto</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN ALMACENES -->
+                <div v-if="activeSection === 'almacenes'">
+                    <div class="content-header">
+                        <div class="header-top">
+                            <h1><span>��</span> Gestión de Almacenes</h1>
+                            <div class="action-buttons">
+                                <button @click="openModal('almacen')" class="btn btn-primary">
+                                    <span>+</span> Nuevo Almacén
+                                </button>
+                                <button @click="deleteSelected('almacenes')" :disabled="!selectedItems.length" class="btn btn-danger">
+                                    <span>🗑️</span> Eliminar ({{ selectedItems.length }})
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div v-if="loading" class="loading">
+                            <div class="spinner"></div>
+                            <p>Cargando almacenes...</p>
+                        </div>
+
+                        <table v-else-if="almacenes.length > 0" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" @change="toggleSelectAll('almacenes')" :checked="allSelected('almacenes')"></th>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Ubicación</th>
+                                    <th>Capacidad Total</th>
+                                    <th>Disponible</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="almacen in almacenes" :key="almacen.id">
+                                    <td><input type="checkbox" :value="almacen.id" v-model="selectedItems"></td>
+                                    <td>{{ almacen.id }}</td>
+                                    <td>{{ almacen.nombre }}</td>
+                                    <td>{{ almacen.ubicacion }}</td>
+                                    <td>{{ almacen.capacidad_total }}</td>
+                                    <td>{{ almacen.capacidad_disponible }}</td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button @click="openInventarioModal(almacen)" class="btn-small" style="background: #3498db;">📦 Inventario</button>
+                                            <button @click="editItem(almacen, 'almacen')" class="btn-small btn-edit">Editar</button>
+                                            <button @click="deleteItem(almacen.id, 'almacenes')" class="btn-small btn-delete-small">Eliminar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div v-else class="empty-state">
+                            <div class="icon">🏭</div>
+                            <h3>No hay almacenes registrados</h3>
+                            <p>Comienza agregando tu primer almacén</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN ÓRDENES -->
+                <div v-if="activeSection === 'ordenes'">
+                    <div class="content-header">
+                        <div class="header-top">
+                            <h1><span>📋</span> Gestión de Órdenes</h1>
+                            <div class="action-buttons">
+                                <button @click="openModal('orden')" class="btn btn-primary">
+                                    <span>+</span> Nueva Orden
+                                </button>
+                                <button @click="deleteSelected('ordenes')" :disabled="!selectedItems.length" class="btn btn-danger">
+                                    <span>🗑️</span> Eliminar ({{ selectedItems.length }})
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Filtros de Estado -->
+                        <div class="filter-section">
+                            <div class="filter-badge" :class="{active: estadoFilter === 'todos'}" @click="estadoFilter = 'todos'">
+                                📊 Todos
+                            </div>
+                            <div class="filter-badge" :class="{active: estadoFilter === 'pendiente'}" @click="estadoFilter = 'pendiente'">
+                                ⏳ Pendiente
+                            </div>
+                            <div class="filter-badge" :class="{active: estadoFilter === 'en tránsito'}" @click="estadoFilter = 'en tránsito'">
+                                🚚 En Tránsito
+                            </div>
+                            <div class="filter-badge" :class="{active: estadoFilter === 'entregado'}" @click="estadoFilter = 'entregado'">
+                                ✅ Entregado
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div v-if="loading" class="loading">
+                            <div class="spinner"></div>
+                            <p>Cargando órdenes...</p>
+                        </div>
+
+                        <table v-else-if="filteredOrdenes.length > 0" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" @change="toggleSelectAll('ordenes')" :checked="allSelected('ordenes')"></th>
+                                    <th>ID</th>
+                                    <th>Cliente</th>
+                                    <th>Producto</th>
+                                    <th>Volumen</th>
+                                    <th>Almacén</th>
+                                    <th>Chofer</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="orden in filteredOrdenes" :key="orden.id">
+                                    <td><input type="checkbox" :value="orden.id" v-model="selectedItems"></td>
+                                    <td>{{ orden.id }}</td>
+                                    <td>{{ orden.cliente_nombre }}</td>
+                                    <td>{{ orden.producto_nombre }}</td>
+                                    <td>{{ orden.volumen_solicitado }}</td>
+                                    <td>{{ orden.almacen_nombre }}</td>
+                                    <td>{{ orden.delivery_nombre || 'Sin asignar' }}</td>
+                                    <td>
+                                        <span :class="['badge', getBadgeClass(orden.estado)]">
+                                            {{ orden.estado || 'pendiente' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button @click="editItem(orden, 'orden')" class="btn-small btn-edit">Editar</button>
+                                            <button @click="deleteItem(orden.id, 'ordenes')" class="btn-small btn-delete-small">Eliminar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div v-else class="empty-state">
+                            <div class="icon">📋</div>
+                            <h3>No hay órdenes {{ estadoFilter !== 'todos' ? 'con estado: ' + estadoFilter : 'registradas' }}</h3>
+                            <p>{{ estadoFilter !== 'todos' ? 'Prueba con otro filtro' : 'Comienza creando tu primera orden' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Modal de Formulario -->
+        <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>
+                        <span>{{ modalIcon }}</span>
+                        {{ editingId ? 'Editar' : 'Nuevo' }} {{ modalTitle }}
+                    </h2>
+                    <button @click="closeModal" class="btn-close">✕</button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- FORMULARIO CLIENTES -->
+                    <form v-if="modalType === 'cliente'" @submit.prevent="saveItem">
+                        <div class="form-group">
+                            <label>Nombre *</label>
+                            <input type="text" v-model="currentForm.nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Dirección *</label>
+                            <input type="text" v-model="currentForm.direccion" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Cédula *</label>
+                                <input type="text" v-model="currentForm.cedula" @input="formatCedulaModal" placeholder="000-0000000-0" maxlength="13" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono *</label>
+                                <input type="tel" v-model="currentForm.telefono" @input="formatTelefonoModal" placeholder="000-000-0000" maxlength="12" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" v-model="currentForm.email">
+                        </div>
+                        <div class="form-group">
+                            <label>Condiciones Comerciales</label>
+                            <textarea v-model="currentForm.condiciones_comerciales" rows="3"></textarea>
+                        </div>
+                    </form>
+
+                    <!-- FORMULARIO PRODUCTOS -->
+                    <form v-if="modalType === 'producto'" @submit.prevent="saveItem">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nombre *</label>
+                                <input type="text" v-model="currentForm.nombre" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo *</label>
+                                <select v-model="currentForm.tipo" required>
+                                    <option value="">Seleccionar</option>
+                                    <option value="Gasolina Regular">Gasolina Regular</option>
+                                    <option value="Gasolina Premium">Gasolina Premium</option>
+                                    <option value="Diésel">Diésel</option>
+                                    <option value="Kerosene">Kerosene</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Precio *</label>
+                                <input type="number" step="0.01" v-model="currentForm.precio" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Unidad *</label>
+                                <select v-model="currentForm.unidad" required>
+                                    <option value="">Seleccionar</option>
+                                    <option value="Galón">Galón</option>
+                                    <option value="Litro">Litro</option>
+                                    <option value="Barril">Barril</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Descripción</label>
+                            <textarea v-model="currentForm.descripcion" rows="3"></textarea>
+                        </div>
+                    </form>
+
+                    <!-- FORMULARIO ALMACENES -->
+                    <form v-if="modalType === 'almacen'" @submit.prevent="saveItem">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nombre *</label>
+                                <input type="text" v-model="currentForm.nombre" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Ubicación *</label>
+                                <input type="text" v-model="currentForm.ubicacion" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Capacidad Total *</label>
+                                <input type="number" step="0.01" v-model="currentForm.capacidad_total" required>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- FORMULARIO ÓRDENES -->
+                    <form v-if="modalType === 'orden'" @submit.prevent="saveItem">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Cliente *</label>
+                                <select v-model="currentForm.cliente_id" required>
+                                    <option value="">Seleccionar cliente</option>
+                                    <option v-for="cliente in clientes" :key="cliente.id" :value="cliente.id">
+                                        {{ cliente.nombre }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Producto *</label>
+                                <select v-model="currentForm.producto_id" required>
+                                    <option value="">Seleccionar producto</option>
+                                    <option v-for="producto in productos" :key="producto.id" :value="producto.id">
+                                        {{ producto.nombre }} - {{ producto.tipo }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Almacén *</label>
+                                <select v-model="currentForm.almacen_id" required>
+                                    <option value="">Seleccionar almacén</option>
+                                    <option v-for="almacen in almacenes" :key="almacen.id" :value="almacen.id">
+                                        {{ almacen.nombre }} (Disp: {{ almacen.capacidad_disponible }})
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Chofer</label>
+                                <select v-model="currentForm.delivery_id">
+                                    <option value="">Sin asignar</option>
+                                    <option v-for="delivery in deliveries" :key="delivery.id" :value="delivery.id">
+                                        {{ delivery.nombre }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Volumen Solicitado *</label>
+                                <input type="number" step="0.01" v-model="currentForm.volumen_solicitado" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Precio Unitario</label>
+                                <input type="number" step="0.01" v-model="currentForm.precio_unitario">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Ubicación de Entrega *</label>
+                            <input type="text" v-model="currentForm.ubicacion_entrega" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Notas</label>
+                            <textarea v-model="currentForm.notas" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" @click="closeModal" class="btn btn-secondary">Cancelar</button>
+                    <button type="button" @click="saveItem" class="btn btn-success" :disabled="loading">
+                        {{ loading ? 'Guardando...' : (editingId ? 'Actualizar' : 'Guardar') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL INVENTARIO -->
+        <div v-if="showInventarioModal" class="modal-overlay" @click.self="closeInventarioModal">
+            <div class="modal" style="max-width: 800px;" @click.stop>
+                <div class="modal-header">
+                    <h2>📦 Inventario: {{ currentAlmacen.nombre }}</h2>
+                    <button @click="closeInventarioModal" class="close-btn">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <div style="background: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-around; align-items: center; gap: 20px;">
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px; flex: 1;">
+                                <div style="color: #7f8c8d; font-size: 0.9rem;">Capacidad Total</div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: #34495e;">{{ currentAlmacen.capacidad_total }}</div>
+                            </div>
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px; flex: 1;">
+                                <div style="color: #e74c3c; font-size: 0.9rem;">Usado</div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: #e74c3c;">{{ currentAlmacen.capacidad_total - currentAlmacen.capacidad_disponible }}</div>
+                            </div>
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px; flex: 1;">
+                                <div style="color: #27ae60; font-size: 0.9rem;">Disponible</div>
+                                <div style="font-size: 1.8rem; font-weight: bold; color: #27ae60;">{{ currentAlmacen.capacidad_disponible }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario agregar producto -->
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px;">➕ Agregar Producto</h3>
+                        <form @submit.prevent="addProductoToInventario" style="display: flex; gap: 10px; align-items: end;">
+                            <div style="flex: 1;">
+                                <label>Producto *</label>
+                                <select v-model="inventarioForm.producto_id" required>
+                                    <option value="">Seleccionar producto</option>
+                                    <option v-for="producto in productos" :key="producto.id" :value="producto.id">
+                                        {{ producto.nombre }} ({{ producto.tipo }})
+                                    </option>
+                                </select>
+                            </div>
+                            <div style="flex: 0.5;">
+                                <label>Cantidad *</label>
+                                <input type="number" step="0.01" v-model="inventarioForm.cantidad" required min="0.01">
+                            </div>
+                            <button type="submit" class="btn btn-success" :disabled="loading">
+                                {{ loading ? 'Agregando...' : 'Agregar' }}
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Lista de productos en inventario -->
+                    <h3 style="margin-bottom: 15px;">📋 Productos Almacenados</h3>
+                    <table v-if="inventario.length > 0" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Tipo</th>
+                                <th>Cantidad</th>
+                                <th>Unidad</th>
+                                <th>Fecha Ingreso</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="item in inventario" :key="item.id">
+                                <td>{{ item.producto_nombre }}</td>
+                                <td>{{ item.tipo }}</td>
+                                <td>{{ item.cantidad }}</td>
+                                <td>{{ item.unidad }}</td>
+                                <td>{{ new Date(item.fecha_ingreso).toLocaleDateString() }}</td>
+                                <td>
+                                    <button @click="deleteInventarioItem(item.id)" class="btn-small btn-delete-small">
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div v-else class="empty-state">
+                        <p>No hay productos en este almacén</p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" @click="closeInventarioModal" class="btn btn-secondary">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="app-empleado.js?v=1"></script>
+</body>
+</html>

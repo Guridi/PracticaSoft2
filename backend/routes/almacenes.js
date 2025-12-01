@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../database');
 const { authenticateToken } = require('./auth');
+const { authorize } = require('../middleware/authorize');
 
 const router = express.Router();
 
@@ -38,7 +39,7 @@ router.get('/:id', authenticateToken, (req, res) => {
 });
 
 // POST - Crear un almacén
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
   const { nombre, ubicacion, capacidad_total } = req.body;
 
   if (!nombre || !ubicacion || !capacidad_total) {
@@ -65,7 +66,7 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // PUT - Actualizar un almacén
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
   const { nombre, ubicacion, capacidad_total } = req.body;
 
   db.run(
@@ -84,7 +85,7 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // DELETE - Eliminar un almacén
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, authorize(['admin']), (req, res) => {
   db.run('DELETE FROM almacenes WHERE id = ?', [req.params.id], function(err) {
     if (err) {
       return res.status(500).json({ success: false, message: 'Error al eliminar almacén' });

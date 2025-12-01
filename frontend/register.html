@@ -332,16 +332,6 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="role">Tipo de Usuario</label>
-                        <select id="role" v-model="form.role">
-                            <option value="cliente">Cliente</option>
-                            <option value="admin">Administrador</option>
-                            <option value="empleado">Empleado</option>
-                            <option value="transportista">Transportista</option>
-                        </select>
-                    </div>
-
                     <button type="submit" class="btn btn-primary" :disabled="loading">
                         <span v-if="loading" class="loading-spinner"></span>
                         {{ loading ? 'Registrando...' : 'Crear Cuenta' }}
@@ -369,8 +359,7 @@
                         email: '',
                         direccion: '',
                         password: '',
-                        confirmPassword: '',
-                        role: 'cliente'
+                        confirmPassword: ''
                     },
                     errors: {},
                     loading: false,
@@ -475,9 +464,16 @@
                             
                             this.showAlert('success', '¡Registro exitoso! Redirigiendo...');
                             
-                            // Redirigir al dashboard después de 1.5 segundos
+                            // Redirigir al dashboard según rol después de 1.5 segundos
                             setTimeout(() => {
-                                window.location.href = 'dashboard.html';
+                                const userRole = data.data.user.role;
+                                const dashboardMap = {
+                                    'admin': 'dashboard-admin.html',
+                                    'empleado': 'dashboard-empleado.html',
+                                    'transportista': 'dashboard-transportista.html',
+                                    'cliente': 'dashboard-cliente.html'
+                                };
+                                window.location.href = dashboardMap[userRole] || 'dashboard-cliente.html';
                             }, 1500);
                         } else {
                             this.showAlert('error', data.message || 'Error al registrar usuario');
@@ -491,9 +487,18 @@
                 }
             },
             mounted() {
-                // Si ya hay sesión, redirigir al dashboard
-                if (localStorage.getItem('authToken')) {
-                    window.location.href = 'dashboard.html';
+                // Si ya hay sesión, redirigir al dashboard según rol
+                const token = localStorage.getItem('authToken');
+                const userStr = localStorage.getItem('user');
+                if (token && userStr) {
+                    const user = JSON.parse(userStr);
+                    const dashboardMap = {
+                        'admin': 'dashboard-admin.html',
+                        'empleado': 'dashboard-empleado.html',
+                        'transportista': 'dashboard-transportista.html',
+                        'cliente': 'dashboard-cliente.html'
+                    };
+                    window.location.href = dashboardMap[user.role] || 'dashboard-cliente.html';
                 }
             }
         }).mount('#app');

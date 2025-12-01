@@ -12,9 +12,6 @@
 
 Connected to SQLite database
 Users table ready
-2025-11-30T03:59:27.433Z - GET /api/clientes
-2025-11-30T03:59:28.294Z - GET /api/ordenes
-2025-11-30T03:59:28.537Z - GET /api/clientes
-2025-11-30T03:59:28.539Z - GET /api/productos
-2025-11-30T03:59:28.539Z - GET /api/almacenes
-2025-11-30T03:59:28.540Z - GET /api/deliveries
+2025-11-30T23:48:05.332Z - POST /api/auth/register
+2025-11-30T23:48:07.054Z - GET /api/clientes
+2025-11-30T23:48:12.475Z - GET /api/users

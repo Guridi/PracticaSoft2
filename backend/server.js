@@ -8,6 +8,7 @@ const almacenesRouter = require('./routes/almacenes');
 const deliveriesRouter = require('./routes/deliveries');
 const ordenesRouter = require('./routes/ordenes');
 const inventarioRouter = require('./routes/inventario');
+const usersRouter = require('./routes/users');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
 app.use('/api/clientes', clientesRouter);
 app.use('/api/productos', productosRouter);
 app.use('/api/almacenes', almacenesRouter);

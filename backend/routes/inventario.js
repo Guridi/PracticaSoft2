@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../database');
 const { authenticateToken } = require('./auth');
+const { authorize } = require('../middleware/authorize');
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ router.get('/almacen/:id', authenticateToken, (req, res) => {
 });
 
 // POST - Agregar producto al almacén
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
   const { almacen_id, producto_id, cantidad } = req.body;
 
   if (!almacen_id || !producto_id || !cantidad) {
@@ -113,7 +114,7 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // PUT - Actualizar cantidad de producto en inventario
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
   const { cantidad } = req.body;
 
   if (!cantidad) {
@@ -161,7 +162,7 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // DELETE - Eliminar producto del inventario
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
   db.run('DELETE FROM inventario_almacen WHERE id = ?', [req.params.id], function(err) {
     if (err) {
       return res.status(500).json({ success: false, message: 'Error al eliminar' });

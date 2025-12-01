@@ -6,10 +6,10 @@ const db = require('../database');
 const router = express.Router();
 const JWT_SECRET = 'tu_secreto_super_seguro_cambiar_en_produccion';
 
-// Registro de usuario
+// Registro de usuario (público)
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, nombre, cedula, telefono, direccion, role } = req.body;
+    const { email, password, nombre, cedula, telefono, direccion } = req.body;
 
     // Validaciones básicas
     if (!email || !password || !nombre || !cedula) {
@@ -36,60 +36,69 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Verificar si el usuario ya existe
-    db.get('SELECT * FROM users WHERE email = ? OR cedula = ?', [email, cedula], async (err, existingUser) => {
+    // Verificar si es el primer usuario (será admin automáticamente)
+    db.get('SELECT COUNT(*) as count FROM users', [], async (err, result) => {
       if (err) {
         return res.status(500).json({ success: false, message: 'Error en el servidor' });
       }
 
-      if (existingUser) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'El email o cédula ya está registrado' 
-        });
-      }
+      const isFirstUser = result.count === 0;
+      const userRole = isFirstUser ? 'admin' : 'cliente';
 
-      // Hash de la contraseña
-      const hashedPassword = await bcrypt.hash(password, 10);
+      // Verificar si el usuario ya existe
+      db.get('SELECT * FROM users WHERE email = ? OR cedula = ?', [email, cedula], async (err, existingUser) => {
+        if (err) {
+          return res.status(500).json({ success: false, message: 'Error en el servidor' });
+        }
 
-      // Insertar usuario en la base de datos
-      const userRole = role || 'cliente';
-      db.run(
-        'INSERT INTO users (email, password, nombre, cedula, telefono, direccion, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [email, hashedPassword, nombre, cedula, telefono || '', direccion || '', userRole],
-        function(err) {
-          if (err) {
-            return res.status(500).json({ 
-              success: false, 
-              message: 'Error al crear usuario' 
-            });
-          }
-
-          // Generar token JWT
-          const token = jwt.sign(
-            { id: this.lastID, email, nombre, role: userRole },
-            JWT_SECRET,
-            { expiresIn: '24h' }
-          );
-
-          res.status(201).json({
-            success: true,
-            message: 'Usuario registrado exitosamente',
-            data: {
-              token,
-              user: {
-                id: this.lastID,
-                email,
-                nombre,
-                cedula,
-                telefono: telefono || '',
-                direccion: direccion || '',
-                role: userRole
-              }
-            }
+        if (existingUser) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'El email o cédula ya está registrado' 
           });
         }
-      );
+
+        // Hash de la contraseña
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Insertar usuario en la base de datos
+        db.run(
+          'INSERT INTO users (email, password, nombre, cedula, telefono, direccion, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [email, hashedPassword, nombre, cedula, telefono || '', direccion || '', userRole],
+          function(err) {
+            if (err) {
+              return res.status(500).json({ 
+                success: false, 
+                message: 'Error al crear usuario' 
+              });
+            }
+
+            // Generar token JWT
+            const token = jwt.sign(
+              { id: this.lastID, email, nombre, role: userRole },
+              JWT_SECRET,
+              { expiresIn: '24h' }
+            );
+
+            res.status(201).json({
+              success: true,
+              message: 'Usuario registrado exitosamente',
+              data: {
+                token,
+                user: {
+                  id: this.lastID,
+                  email,
+                  nombre,
+                  cedula,
+                  telefono: telefono || '',
+                  direccion: direccion || '',
+                  role: userRole
+                }
+              }
+            });
+          }
+        );
+      });
     });
   } catch (error) {
     console.error('Error en registro:', error);

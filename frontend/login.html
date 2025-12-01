@@ -348,9 +348,18 @@
                             
                             this.showAlert('success', '¡Login exitoso! Redirigiendo...');
                             
-                            // Redirigir al dashboard después de 1 segundo
+                            // Redirigir según el rol del usuario
+                            const dashboardMap = {
+                                'admin': 'dashboard-admin.html',
+                                'empleado': 'dashboard-empleado.html',
+                                'transportista': 'dashboard-transportista.html',
+                                'cliente': 'dashboard-cliente.html'
+                            };
+                            
+                            const dashboard = dashboardMap[data.data.user.role] || 'dashboard-cliente.html';
+                            
                             setTimeout(() => {
-                                window.location.href = 'dashboard.html';
+                                window.location.href = dashboard;
                             }, 1000);
                         } else {
                             this.showAlert('error', data.message || 'Error al iniciar sesión');
@@ -364,9 +373,19 @@
                 }
             },
             mounted() {
-                // Si ya hay sesión, redirigir al dashboard
-                if (localStorage.getItem('authToken')) {
-                    window.location.href = 'dashboard.html';
+                // Si ya hay sesión, redirigir al dashboard según rol
+                const token = localStorage.getItem('authToken');
+                const userStr = localStorage.getItem('user');
+                
+                if (token && userStr) {
+                    const user = JSON.parse(userStr);
+                    const dashboardMap = {
+                        'admin': 'dashboard-admin.html',
+                        'empleado': 'dashboard-empleado.html',
+                        'transportista': 'dashboard-transportista.html',
+                        'cliente': 'dashboard-cliente.html'
+                    };
+                    window.location.href = dashboardMap[user.role] || 'dashboard-cliente.html';
                 }
             }
         }).mount('#app');

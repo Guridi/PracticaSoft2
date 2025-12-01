@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../database');
 const { authenticateToken } = require('./auth');
+const { authorize } = require('../middleware/authorize');
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.get('/:id', authenticateToken, (req, res) => {
 });
 
 // POST - Crear un producto
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
   const { nombre, tipo, precio, unidad, descripcion } = req.body;
 
   if (!nombre || !tipo || !precio || !unidad) {
@@ -55,7 +56,7 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // PUT - Actualizar un producto
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
   const { nombre, tipo, precio, unidad, descripcion } = req.body;
 
   db.run(
@@ -74,7 +75,7 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // DELETE - Eliminar un producto
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, authorize(['admin']), (req, res) => {
   db.run('DELETE FROM productos WHERE id = ?', [req.params.id], function(err) {
     if (err) {
       return res.status(500).json({ success: false, message: 'Error al eliminar producto' });

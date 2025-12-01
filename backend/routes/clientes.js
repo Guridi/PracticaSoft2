@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../database');
 const { authenticateToken } = require('./auth');
+const { authorize } = require('../middleware/authorize');
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.get('/:id', authenticateToken, (req, res) => {
 });
 
 // POST - Crear un cliente
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
   const { nombre, direccion, cedula, telefono, email, condiciones_comerciales } = req.body;
 
   if (!nombre || !direccion || !cedula || !telefono) {
@@ -58,7 +59,7 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // PUT - Actualizar un cliente
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
   const { nombre, direccion, cedula, telefono, email, condiciones_comerciales } = req.body;
 
   db.run(
@@ -77,7 +78,7 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // DELETE - Eliminar un cliente
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, authorize(['admin']), (req, res) => {
   db.run('DELETE FROM clientes WHERE id = ?', [req.params.id], function(err) {
     if (err) {
       return res.status(500).json({ success: false, message: 'Error al eliminar cliente' });
