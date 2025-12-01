@@ -359,7 +359,7 @@
                             const dashboard = dashboardMap[data.data.user.role] || 'dashboard-cliente.html';
                             
                             setTimeout(() => {
-                                window.location.href = dashboard;
+                                window.location.replace(dashboard);
                             }, 1000);
                         } else {
                             this.showAlert('error', data.message || 'Error al iniciar sesión');
@@ -373,19 +373,26 @@
                 }
             },
             mounted() {
-                // Si ya hay sesión, redirigir al dashboard según rol
+                // Si ya hay sesión, redirigir al dashboard según rol (pero evitar loops)
                 const token = localStorage.getItem('authToken');
                 const userStr = localStorage.getItem('user');
                 
                 if (token && userStr) {
-                    const user = JSON.parse(userStr);
-                    const dashboardMap = {
-                        'admin': 'dashboard-admin.html',
-                        'empleado': 'dashboard-empleado.html',
-                        'transportista': 'dashboard-transportista.html',
-                        'cliente': 'dashboard-cliente.html'
-                    };
-                    window.location.href = dashboardMap[user.role] || 'dashboard-cliente.html';
+                    try {
+                        const user = JSON.parse(userStr);
+                        const dashboardMap = {
+                            'admin': 'dashboard-admin.html',
+                            'empleado': 'dashboard-empleado.html',
+                            'transportista': 'dashboard-transportista.html',
+                            'cliente': 'dashboard-cliente.html'
+                        };
+                        const targetDashboard = dashboardMap[user.role] || 'dashboard-cliente.html';
+                        // Usar replace para evitar loops de historial
+                        window.location.replace(targetDashboard);
+                    } catch (e) {
+                        // Si hay error parseando, limpiar y quedarse en login
+                        localStorage.clear();
+                    }
                 }
             }
         }).mount('#app');

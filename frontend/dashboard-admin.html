@@ -673,6 +673,9 @@
                         <div class="header-top">
                             <h1><span>👥</span> Gestión de Clientes</h1>
                             <div class="action-buttons">
+                                <button @click="generateReport('clientes')" class="btn" style="background: #27ae60; color: white;">
+                                    <span>📄</span> Generar PDF
+                                </button>
                                 <button @click="openModal('cliente')" class="btn btn-primary">
                                     <span>+</span> Nuevo Cliente
                                 </button>
@@ -735,6 +738,9 @@
                         <div class="header-top">
                             <h1><span>⛽</span> Gestión de Productos</h1>
                             <div class="action-buttons">
+                                <button @click="generateReport('productos')" class="btn" style="background: #27ae60; color: white;">
+                                    <span>📄</span> Generar PDF
+                                </button>
                                 <button @click="openModal('producto')" class="btn btn-primary">
                                     <span>+</span> Nuevo Producto
                                 </button>
@@ -858,6 +864,9 @@
                         <div class="header-top">
                             <h1><span>🚗</span> Gestión de Choferes</h1>
                             <div class="action-buttons">
+                                <button @click="generateReport('choferes')" class="btn" style="background: #27ae60; color: white;">
+                                    <span>📄</span> Generar PDF
+                                </button>
                                 <button @click="openModal('chofer')" class="btn btn-primary">
                                     <span>+</span> Nuevo Chofer
                                 </button>
@@ -922,6 +931,9 @@
                         <div class="header-top">
                             <h1><span>📋</span> Gestión de Órdenes</h1>
                             <div class="action-buttons">
+                                <button @click="generateReport('ordenes')" class="btn" style="background: #27ae60; color: white;">
+                                    <span>📄</span> Generar PDF
+                                </button>
                                 <button @click="openModal('orden')" class="btn btn-primary">
                                     <span>+</span> Nueva Orden
                                 </button>

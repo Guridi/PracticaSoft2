@@ -76,13 +76,17 @@ createApp({
     
     // Navegación
     changeSection(section) {
+      console.log('🔄 Cambiando a sección:', section);
       this.activeSection = section;
       this.selectedItems = [];
       this.estadoFilter = 'todos';
-      this.loadSectionData();
+      this.loadSectionData(section);
+      console.log('✅ Sección activa:', this.activeSection);
     },
     
-    loadSectionData() {
+    loadSectionData(section = null) {
+      const targetSection = section || this.activeSection;
+      console.log('📊 loadSectionData llamado, sección objetivo:', targetSection);
       const sectionMap = {
         'clientes': 'cliente',
         'productos': 'producto',
@@ -91,7 +95,9 @@ createApp({
         'ordenes': 'orden',
         'usuarios': 'user'
       };
-      this.loadData(sectionMap[this.activeSection]);
+      const module = sectionMap[targetSection];
+      console.log('📦 Módulo a cargar:', module);
+      this.loadData(module);
     },
     
     // API Helper
@@ -114,6 +120,7 @@ createApp({
     
     // Cargar datos
     async loadData(module) {
+      console.log('🔍 loadData llamado con módulo:', module);
       this.loading = true;
       try {
         // Mapa de endpoints para casos especiales
@@ -136,12 +143,15 @@ createApp({
         };
         const property = propertyMap[module] || `${module}s`;
         
+        console.log('🌐 Cargando desde endpoint:', endpoint);
         const result = await this.apiRequest('GET', endpoint);
         if (result.success) {
           this[property] = result.data;
+          console.log('✔️ Datos cargados en propiedad:', property);
           
           // Cargar datos relacionados para órdenes
           if (module === 'orden') {
+            console.log('📚 Cargando datos relacionados para órdenes');
             await this.loadRelatedData();
           }
         }
@@ -207,9 +217,23 @@ createApp({
     // Editar item
     editItem(item, type) {
       this.editingId = item.id;
-      this.openModal(type);
+      this.modalType = type;
       
-      // Copiar datos según el tipo
+      // Establecer título e icono del modal
+      const config = {
+        cliente: { title: 'Cliente', icon: '👥' },
+        producto: { title: 'Producto', icon: '⛽' },
+        almacen: { title: 'Almacén', icon: '🏭' },
+        chofer: { title: 'Chofer', icon: '🚗' },
+        orden: { title: 'Orden', icon: '📋' },
+        usuario: { title: 'Usuario', icon: '👤' }
+      };
+      
+      const selected = config[type];
+      this.modalTitle = selected.title;
+      this.modalIcon = selected.icon;
+      
+      // Copiar datos según el tipo ANTES de abrir el modal
       if (type === 'orden') {
         this.currentForm = {
           cliente_id: item.cliente_id,
@@ -226,14 +250,22 @@ createApp({
           nombre: item.nombre,
           email: item.email,
           cedula: item.cedula,
-          telefono: item.telefono,
-          direccion: item.direccion,
+          telefono: item.telefono || '',
+          direccion: item.direccion || '',
           role: item.role,
           password: '' // No pre-cargar password en edición
         };
       } else {
         this.currentForm = { ...item };
       }
+      
+      // Cargar datos relacionados si es orden
+      if (type === 'orden' && this.clientes.length === 0) {
+        this.loadRelatedData();
+      }
+      
+      // Abrir modal
+      this.showModal = true;
     },
     
     // Guardar item
@@ -493,10 +525,42 @@ createApp({
       } finally {
         this.loading = false;
       }
+    },
+    
+    // Generar reporte PDF
+    async generateReport(tipo) {
+      try {
+        const response = await fetch(`${API_URL}/reportes/${tipo}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${this.token}`
+          }
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `reporte_${tipo}_${Date.now()}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          this.showAlert('success', 'Reporte generado exitosamente');
+        } else {
+          const error = await response.json();
+          this.showAlert('error', error.message || 'Error al generar reporte');
+        }
+      } catch (error) {
+        console.error('Error generando reporte:', error);
+        this.showAlert('error', 'Error al generar reporte');
+      }
     }
   },
   
   mounted() {
+    console.log('🚀 App montada, sección inicial:', this.activeSection);
     this.checkAuth();
     this.loadSectionData();
   }

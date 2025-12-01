@@ -9,12 +9,12 @@ const router = express.Router();
 router.get('/', authenticateToken, (req, res) => {
   const query = `
     SELECT o.*, 
-           c.nombre as cliente_nombre,
+           u.nombre as cliente_nombre,
            p.nombre as producto_nombre,
            d.nombre as delivery_nombre,
            a.nombre as almacen_nombre
     FROM ordenes o
-    LEFT JOIN clientes c ON o.cliente_id = c.id
+    LEFT JOIN users u ON o.user_id = u.id
     LEFT JOIN productos p ON o.producto_id = p.id
     LEFT JOIN deliveries d ON o.delivery_id = d.id
     LEFT JOIN almacenes a ON o.almacen_id = a.id
@@ -33,12 +33,12 @@ router.get('/', authenticateToken, (req, res) => {
 router.get('/:id', authenticateToken, (req, res) => {
   const query = `
     SELECT o.*, 
-           c.nombre as cliente_nombre,
+           u.nombre as cliente_nombre,
            p.nombre as producto_nombre,
            d.nombre as delivery_nombre,
            a.nombre as almacen_nombre
     FROM ordenes o
-    LEFT JOIN clientes c ON o.cliente_id = c.id
+    LEFT JOIN users u ON o.user_id = u.id
     LEFT JOIN productos p ON o.producto_id = p.id
     LEFT JOIN deliveries d ON o.delivery_id = d.id
     LEFT JOIN almacenes a ON o.almacen_id = a.id
@@ -59,15 +59,15 @@ router.get('/:id', authenticateToken, (req, res) => {
 // POST - Crear una orden
 router.post('/', authenticateToken, authorize(['admin', 'empleado', 'cliente']), (req, res) => {
   const { 
-    cliente_id, producto_id, delivery_id, almacen_id, 
+    user_id, producto_id, delivery_id, almacen_id, 
     volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio, 
     ventana_entrega_fin, precio_unitario, notas 
   } = req.body;
 
-  if (!cliente_id || !producto_id || !almacen_id || !volumen_solicitado || !ubicacion_entrega) {
+  if (!user_id || !producto_id || !almacen_id || !volumen_solicitado || !ubicacion_entrega) {
     return res.status(400).json({ 
       success: false, 
-      message: 'Cliente, producto, almacén, volumen y ubicación son requeridos' 
+      message: 'Usuario, producto, almacén, volumen y ubicación son requeridos' 
     });
   }
 
@@ -101,12 +101,12 @@ router.post('/', authenticateToken, authorize(['admin', 'empleado', 'cliente']),
           // Crear la orden
           db.run(
             `INSERT INTO ordenes (
-              cliente_id, producto_id, delivery_id, almacen_id, 
+              user_id, producto_id, delivery_id, almacen_id, 
               volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio,
               ventana_entrega_fin, precio_unitario, total, notas
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              cliente_id, producto_id, delivery_id || null, almacen_id,
+              user_id, producto_id, delivery_id || null, almacen_id,
               volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio || null,
               ventana_entrega_fin || null, precio_unitario || null, total, notas || ''
             ],
@@ -131,7 +131,7 @@ router.post('/', authenticateToken, authorize(['admin', 'empleado', 'cliente']),
 // PUT - Actualizar una orden
 router.put('/:id', authenticateToken, authorize(['admin', 'empleado', 'transportista']), (req, res) => {
   const { 
-    cliente_id, producto_id, delivery_id, almacen_id,
+    user_id, producto_id, delivery_id, almacen_id,
     volumen_solicitado, volumen_entregado, estado,
     ubicacion_entrega, fecha_entrega, precio_unitario, notas
   } = req.body;
@@ -140,13 +140,13 @@ router.put('/:id', authenticateToken, authorize(['admin', 'empleado', 'transport
 
   db.run(
     `UPDATE ordenes SET 
-      cliente_id = ?, producto_id = ?, delivery_id = ?, almacen_id = ?,
+      user_id = ?, producto_id = ?, delivery_id = ?, almacen_id = ?,
       volumen_solicitado = ?, volumen_entregado = ?, estado = ?,
       ubicacion_entrega = ?, fecha_entrega = ?, precio_unitario = ?,
       total = ?, notas = ?
     WHERE id = ?`,
     [
-      cliente_id, producto_id, delivery_id, almacen_id,
+      user_id, producto_id, delivery_id, almacen_id,
       volumen_solicitado, volumen_entregado || null, estado || 'pendiente',
       ubicacion_entrega, fecha_entrega || null, precio_unitario || null,
       total, notas || '', req.params.id

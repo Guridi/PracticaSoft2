@@ -102,7 +102,7 @@ function initDatabase() {
   db.run(`
     CREATE TABLE IF NOT EXISTS ordenes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      cliente_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
       producto_id INTEGER NOT NULL,
       delivery_id INTEGER,
       almacen_id INTEGER NOT NULL,
@@ -117,7 +117,7 @@ function initDatabase() {
       precio_unitario REAL,
       total REAL,
       notas TEXT,
-      FOREIGN KEY (cliente_id) REFERENCES clientes(id),
+      FOREIGN KEY (user_id) REFERENCES users(id),
       FOREIGN KEY (producto_id) REFERENCES productos(id),
       FOREIGN KEY (delivery_id) REFERENCES deliveries(id),
       FOREIGN KEY (almacen_id) REFERENCES almacenes(id)

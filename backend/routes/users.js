@@ -117,28 +117,46 @@ router.put('/:id', authenticateToken, authorize(['admin']), async (req, res) => 
       }
     }
 
-    // Si se proporciona nueva contraseña, hashearla
-    let updateQuery;
-    let updateParams;
+    // Verificar si el email o cédula ya existen en otro usuario
+    db.get(
+      'SELECT * FROM users WHERE (email = ? OR cedula = ?) AND id != ?', 
+      [email, cedula, req.params.id], 
+      async (err, existingUser) => {
+        if (err) {
+          return res.status(500).json({ success: false, message: 'Error en el servidor' });
+        }
 
-    if (password) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      updateQuery = 'UPDATE users SET email = ?, password = ?, nombre = ?, cedula = ?, telefono = ?, direccion = ?, role = ? WHERE id = ?';
-      updateParams = [email, hashedPassword, nombre, cedula, telefono || '', direccion || '', role, req.params.id];
-    } else {
-      updateQuery = 'UPDATE users SET email = ?, nombre = ?, cedula = ?, telefono = ?, direccion = ?, role = ? WHERE id = ?';
-      updateParams = [email, nombre, cedula, telefono || '', direccion || '', role, req.params.id];
-    }
+        if (existingUser) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'El email o cédula ya está registrado en otro usuario' 
+          });
+        }
 
-    db.run(updateQuery, updateParams, function(err) {
-      if (err) {
-        return res.status(500).json({ success: false, message: 'Error al actualizar usuario' });
+        // Si se proporciona nueva contraseña, hashearla
+        let updateQuery;
+        let updateParams;
+
+        if (password) {
+          const hashedPassword = await bcrypt.hash(password, 10);
+          updateQuery = 'UPDATE users SET email = ?, password = ?, nombre = ?, cedula = ?, telefono = ?, direccion = ?, role = ? WHERE id = ?';
+          updateParams = [email, hashedPassword, nombre, cedula, telefono || '', direccion || '', role, req.params.id];
+        } else {
+          updateQuery = 'UPDATE users SET email = ?, nombre = ?, cedula = ?, telefono = ?, direccion = ?, role = ? WHERE id = ?';
+          updateParams = [email, nombre, cedula, telefono || '', direccion || '', role, req.params.id];
+        }
+
+        db.run(updateQuery, updateParams, function(err) {
+          if (err) {
+            return res.status(500).json({ success: false, message: 'Error al actualizar usuario' });
+          }
+          if (this.changes === 0) {
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+          }
+          res.json({ success: true, message: 'Usuario actualizado exitosamente' });
+        });
       }
-      if (this.changes === 0) {
-        return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
-      }
-      res.json({ success: true, message: 'Usuario actualizado exitosamente' });
-    });
+    );
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
     res.status(500).json({ success: false, message: 'Error en el servidor' });
