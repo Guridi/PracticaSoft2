@@ -40,9 +40,9 @@ router.get('/:id', authenticateToken, (req, res) => {
 
 // POST - Crear un almacén
 router.post('/', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
-  const { nombre, ubicacion, capacidad_total } = req.body;
+  const { nombre, ubicacion, capacidad_total, unidad_capacidad } = req.body;
 
-  if (!nombre || !ubicacion || !capacidad_total) {
+  if (!nombre || !ubicacion || !capacidad_total || !unidad_capacidad) {
     return res.status(400).json({ 
       success: false, 
       message: 'Todos los campos son requeridos' 
@@ -50,8 +50,8 @@ router.post('/', authenticateToken, authorize(['admin', 'empleado']), (req, res)
   }
 
   db.run(
-    'INSERT INTO almacenes (nombre, ubicacion, capacidad_total) VALUES (?, ?, ?)',
-    [nombre, ubicacion, capacidad_total],
+    'INSERT INTO almacenes (nombre, ubicacion, capacidad_total, unidad_capacidad) VALUES (?, ?, ?, ?)',
+    [nombre, ubicacion, capacidad_total, unidad_capacidad],
     function(err) {
       if (err) {
         return res.status(500).json({ success: false, message: 'Error al crear almacén' });
@@ -59,7 +59,7 @@ router.post('/', authenticateToken, authorize(['admin', 'empleado']), (req, res)
       res.status(201).json({
         success: true,
         message: 'Almacén creado exitosamente',
-        data: { id: this.lastID, nombre, ubicacion, capacidad_total }
+        data: { id: this.lastID, nombre, ubicacion, capacidad_total, unidad_capacidad }
       });
     }
   );
@@ -67,11 +67,11 @@ router.post('/', authenticateToken, authorize(['admin', 'empleado']), (req, res)
 
 // PUT - Actualizar un almacén
 router.put('/:id', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
-  const { nombre, ubicacion, capacidad_total } = req.body;
+  const { nombre, ubicacion, capacidad_total, unidad_capacidad } = req.body;
 
   db.run(
-    'UPDATE almacenes SET nombre = ?, ubicacion = ?, capacidad_total = ? WHERE id = ?',
-    [nombre, ubicacion, capacidad_total, req.params.id],
+    'UPDATE almacenes SET nombre = ?, ubicacion = ?, capacidad_total = ?, unidad_capacidad = ? WHERE id = ?',
+    [nombre, ubicacion, capacidad_total, unidad_capacidad, req.params.id],
     function(err) {
       if (err) {
         return res.status(500).json({ success: false, message: 'Error al actualizar almacén' });

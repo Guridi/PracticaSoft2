@@ -5,9 +5,9 @@ const { authorize } = require('../middleware/authorize');
 
 const router = express.Router();
 
-// GET - Obtener todos los clientes
+// GET - Obtener todos los clientes (usuarios con role='cliente')
 router.get('/', authenticateToken, (req, res) => {
-  db.all('SELECT * FROM clientes ORDER BY created_at DESC', [], (err, rows) => {
+  db.all('SELECT id, nombre, cedula, telefono, email, direccion, created_at FROM users WHERE role = "cliente" ORDER BY created_at DESC', [], (err, rows) => {
     if (err) {
       return res.status(500).json({ success: false, message: 'Error al obtener clientes' });
     }
@@ -17,7 +17,7 @@ router.get('/', authenticateToken, (req, res) => {
 
 // GET - Obtener un cliente por ID
 router.get('/:id', authenticateToken, (req, res) => {
-  db.get('SELECT * FROM clientes WHERE id = ?', [req.params.id], (err, row) => {
+  db.get('SELECT id, nombre, cedula, telefono, email, direccion, created_at FROM users WHERE id = ? AND role = "cliente"', [req.params.id], (err, row) => {
     if (err) {
       return res.status(500).json({ success: false, message: 'Error al obtener cliente' });
     }
@@ -28,43 +28,21 @@ router.get('/:id', authenticateToken, (req, res) => {
   });
 });
 
-// POST - Crear un cliente
+// POST - Crear un cliente (DESHABILITADO - usar registro de usuarios)
 router.post('/', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
-  const { nombre, direccion, cedula, telefono, email, condiciones_comerciales } = req.body;
-
-  if (!nombre || !direccion || !cedula || !telefono) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Nombre, dirección, cédula y teléfono son requeridos' 
-    });
-  }
-
-  db.run(
-    'INSERT INTO clientes (nombre, direccion, cedula, telefono, email, condiciones_comerciales) VALUES (?, ?, ?, ?, ?, ?)',
-    [nombre, direccion, cedula, telefono, email || '', condiciones_comerciales || ''],
-    function(err) {
-      if (err) {
-        if (err.message.includes('UNIQUE')) {
-          return res.status(400).json({ success: false, message: 'La cédula ya está registrada' });
-        }
-        return res.status(500).json({ success: false, message: 'Error al crear cliente' });
-      }
-      res.status(201).json({
-        success: true,
-        message: 'Cliente creado exitosamente',
-        data: { id: this.lastID, nombre, direccion, cedula, telefono, email, condiciones_comerciales }
-      });
-    }
-  );
+  return res.status(400).json({ 
+    success: false, 
+    message: 'Los clientes se crean mediante el registro de usuarios con rol "cliente"' 
+  });
 });
 
-// PUT - Actualizar un cliente
+// PUT - Actualizar un cliente (en tabla users)
 router.put('/:id', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
-  const { nombre, direccion, cedula, telefono, email, condiciones_comerciales } = req.body;
+  const { nombre, direccion, cedula, telefono, email } = req.body;
 
   db.run(
-    'UPDATE clientes SET nombre = ?, direccion = ?, cedula = ?, telefono = ?, email = ?, condiciones_comerciales = ? WHERE id = ?',
-    [nombre, direccion, cedula, telefono, email || '', condiciones_comerciales || '', req.params.id],
+    'UPDATE users SET nombre = ?, direccion = ?, cedula = ?, telefono = ?, email = ? WHERE id = ? AND role = "cliente"',
+    [nombre, direccion, cedula, telefono, email || '', req.params.id],
     function(err) {
       if (err) {
         return res.status(500).json({ success: false, message: 'Error al actualizar cliente' });
@@ -77,9 +55,9 @@ router.put('/:id', authenticateToken, authorize(['admin', 'empleado']), (req, re
   );
 });
 
-// DELETE - Eliminar un cliente
+// DELETE - Eliminar un cliente (de tabla users)
 router.delete('/:id', authenticateToken, authorize(['admin']), (req, res) => {
-  db.run('DELETE FROM clientes WHERE id = ?', [req.params.id], function(err) {
+  db.run('DELETE FROM users WHERE id = ? AND role = "cliente"', [req.params.id], function(err) {
     if (err) {
       return res.status(500).json({ success: false, message: 'Error al eliminar cliente' });
     }

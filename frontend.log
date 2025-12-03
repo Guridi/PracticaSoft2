@@ -1,5 +1,0 @@
-127.0.0.1 - - [01/Dec/2025 18:43:17] "GET /login.html HTTP/1.1" 304 -
-127.0.0.1 - - [01/Dec/2025 18:43:20] "GET /dashboard-admin.html HTTP/1.1" 304 -
-127.0.0.1 - - [01/Dec/2025 18:43:20] "GET /app-admin.js?v=1 HTTP/1.1" 304 -
-127.0.0.1 - - [01/Dec/2025 18:43:52] "GET /dashboard-cliente.html HTTP/1.1" 304 -
-127.0.0.1 - - [01/Dec/2025 18:43:52] "GET /app-cliente.js HTTP/1.1" 304 -

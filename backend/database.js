@@ -12,6 +12,19 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 function initDatabase() {
+  // Tabla de vehículos
+  db.run(`
+    CREATE TABLE IF NOT EXISTS vehiculos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      placa TEXT UNIQUE NOT NULL,
+      marca TEXT NOT NULL,
+      modelo TEXT NOT NULL,
+      año INTEGER,
+      capacidad REAL NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Tabla de usuarios (para login/register)
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
@@ -23,7 +36,9 @@ function initDatabase() {
       telefono TEXT,
       direccion TEXT,
       role TEXT DEFAULT 'cliente',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      vehiculo_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (vehiculo_id) REFERENCES vehiculos(id)
     )
   `, (err) => {
     if (err) {
@@ -67,6 +82,7 @@ function initDatabase() {
       nombre TEXT NOT NULL,
       ubicacion TEXT NOT NULL,
       capacidad_total REAL NOT NULL,
+      unidad_capacidad TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -116,6 +132,8 @@ function initDatabase() {
       estado TEXT DEFAULT 'pendiente',
       precio_unitario REAL,
       total REAL,
+      pagado INTEGER DEFAULT 0,
+      payment_method TEXT,
       notas TEXT,
       FOREIGN KEY (user_id) REFERENCES users(id),
       FOREIGN KEY (producto_id) REFERENCES productos(id),

@@ -16,12 +16,24 @@ createApp({
       deliveries: [],
       ordenes: [],
       usuarios: [],
+      vehiculos: [],
       
       // Control de modal
       showModal: false,
       modalType: '',
       modalTitle: '',
       modalIcon: '',
+      
+      // Modal vehículos
+      showVehiculosModal: false,
+      vehiculoForm: {
+        placa: '',
+        marca: '',
+        modelo: '',
+        año: '',
+        capacidad: ''
+      },
+      editingVehiculoId: null,
       
       // Formulario actual
       currentForm: {},
@@ -50,10 +62,39 @@ createApp({
         return this.ordenes;
       }
       return this.ordenes.filter(orden => (orden.estado || 'pendiente') === this.estadoFilter);
+    },
+    
+    productosCompatibles() {
+      if (!this.currentAlmacen || !this.currentAlmacen.unidad_capacidad) {
+        return this.productos;
+      }
+      return this.productos.filter(p => p.unidad === this.currentAlmacen.unidad_capacidad);
+    },
+    
+    deliveryCapacidad() {
+      if (!this.currentForm.delivery_id) return 0;
+      const chofer = this.deliveries.find(d => d.id == this.currentForm.delivery_id);
+      return chofer && chofer.capacidad ? chofer.capacidad : 0;
     }
   },
   
   methods: {
+    // Conversiones estándar
+    GALON_A_LITROS: 3.78541,
+    BARRIL_A_LITROS: 159,
+    
+    convertirALitros(cantidad, unidad) {
+      switch(unidad) {
+        case 'Litro':
+          return cantidad;
+        case 'Galón':
+          return cantidad * this.GALON_A_LITROS;
+        case 'Barril':
+          return cantidad * this.BARRIL_A_LITROS;
+        default:
+          return cantidad;
+      }
+    },
     // Autenticación
     checkAuth() {
       const token = localStorage.getItem('authToken');
@@ -81,6 +122,12 @@ createApp({
       this.selectedItems = [];
       this.estadoFilter = 'todos';
       this.loadSectionData(section);
+      
+      // Cargar vehículos si estamos en la sección de choferes
+      if (section === 'choferes') {
+        this.loadVehiculos();
+      }
+      
       console.log('✅ Sección activa:', this.activeSection);
     },
     
@@ -189,7 +236,7 @@ createApp({
       const config = {
         cliente: { title: 'Cliente', icon: '👥', form: { nombre: '', direccion: '', cedula: '', telefono: '', email: '', condiciones_comerciales: '' }},
         producto: { title: 'Producto', icon: '⛽', form: { nombre: '', tipo: '', precio: '', unidad: '', descripcion: '' }},
-        almacen: { title: 'Almacén', icon: '🏭', form: { nombre: '', ubicacion: '', capacidad_total: '' }},
+        almacen: { title: 'Almacén', icon: '🏭', form: { nombre: '', ubicacion: '', capacidad_total: '', unidad_capacidad: '' }},
         chofer: { title: 'Chofer', icon: '🚗', form: { nombre: '', cedula: '', telefono: '', licencia: '', vehiculo_placa: '', vehiculo_capacidad: '' }},
         orden: { title: 'Orden', icon: '📋', form: { cliente_id: '', producto_id: '', delivery_id: '', almacen_id: '', volumen_solicitado: '', ubicacion_entrega: '', precio_unitario: '', notas: '' }},
         usuario: { title: 'Usuario', icon: '👤', form: { nombre: '', email: '', cedula: '', telefono: '', direccion: '', role: '', password: '' }}
@@ -234,7 +281,23 @@ createApp({
       this.modalIcon = selected.icon;
       
       // Copiar datos según el tipo ANTES de abrir el modal
-      if (type === 'orden') {
+      if (type === 'cliente') {
+        this.currentForm = {
+          nombre: item.nombre,
+          email: item.email,
+          cedula: item.cedula,
+          telefono: item.telefono || '',
+          direccion: item.direccion || ''
+        };
+      } else if (type === 'chofer') {
+        this.currentForm = {
+          nombre: item.nombre,
+          email: item.email,
+          cedula: item.cedula,
+          telefono: item.telefono || '',
+          direccion: item.direccion || ''
+        };
+      } else if (type === 'orden') {
         this.currentForm = {
           cliente_id: item.cliente_id,
           producto_id: item.producto_id,
@@ -272,6 +335,31 @@ createApp({
     async saveItem() {
       this.loading = true;
       try {
+        // Validar capacidad del vehículo si es una orden
+        if (this.modalType === 'orden') {
+          const chofer = this.deliveries.find(d => d.id == this.currentForm.delivery_id);
+          
+          if (chofer && chofer.vehiculo_id) {
+            const producto = this.productos.find(p => p.id == this.currentForm.producto_id);
+            const volumenEnLitros = this.convertirALitros(
+              parseFloat(this.currentForm.volumen_solicitado), 
+              producto.unidad
+            );
+            
+            if (volumenEnLitros > chofer.capacidad) {
+              this.showAlert('error', 
+                `⚠️ Capacidad insuficiente: El vehículo tiene ${chofer.capacidad}L pero la orden requiere ${volumenEnLitros.toFixed(2)}L`
+              );
+              this.loading = false;
+              return;
+            }
+          } else if (chofer && !chofer.vehiculo_id) {
+            this.showAlert('warning', '⚠️ El chofer seleccionado no tiene vehículo asignado');
+            this.loading = false;
+            return;
+          }
+        }
+        
         const typeMap = {
           cliente: 'clientes',
           producto: 'productos',
@@ -466,6 +554,13 @@ createApp({
         return;
       }
       
+      // Validar que el producto tenga la misma unidad que el almacén
+      const producto = this.productos.find(p => p.id == this.inventarioForm.producto_id);
+      if (producto && producto.unidad !== this.currentAlmacen.unidad_capacidad) {
+        alert(`Este almacén solo acepta productos en ${this.currentAlmacen.unidad_capacidad}. El producto seleccionado usa ${producto.unidad}.`);
+        return;
+      }
+      
       this.loading = true;
       try {
         const result = await this.apiRequest('POST', '/inventario', {
@@ -555,6 +650,194 @@ createApp({
       } catch (error) {
         console.error('Error generando reporte:', error);
         this.showAlert('error', 'Error al generar reporte');
+      }
+    },
+
+    // Gestión de Vehículos
+    async openVehiculosModal() {
+      await this.loadVehiculos();
+      this.showVehiculosModal = true;
+    },
+
+    closeVehiculosModal() {
+      this.showVehiculosModal = false;
+      this.resetVehiculoForm();
+    },
+
+    resetVehiculoForm() {
+      this.vehiculoForm = {
+        placa: '',
+        marca: '',
+        modelo: '',
+        año: '',
+        capacidad: ''
+      };
+      this.editingVehiculoId = null;
+    },
+
+    async loadVehiculos() {
+      try {
+        const response = await fetch(`${API_URL}/vehiculos`, {
+          headers: {
+            'Authorization': `Bearer ${this.token}`
+          }
+        });
+        if (response.ok) {
+          this.vehiculos = await response.json();
+        }
+      } catch (error) {
+        console.error('Error cargando vehículos:', error);
+      }
+    },
+
+    editVehiculo(vehiculo) {
+      this.vehiculoForm = {
+        placa: vehiculo.placa,
+        marca: vehiculo.marca,
+        modelo: vehiculo.modelo,
+        año: vehiculo.año || '',
+        capacidad: vehiculo.capacidad
+      };
+      this.editingVehiculoId = vehiculo.id;
+    },
+
+    async saveVehiculo() {
+      try {
+        const url = this.editingVehiculoId 
+          ? `${API_URL}/vehiculos/${this.editingVehiculoId}`
+          : `${API_URL}/vehiculos`;
+        
+        const method = this.editingVehiculoId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+          },
+          body: JSON.stringify(this.vehiculoForm)
+        });
+
+        if (response.ok) {
+          this.showAlert('success', this.editingVehiculoId ? 'Vehículo actualizado' : 'Vehículo creado');
+          await this.loadVehiculos();
+          this.resetVehiculoForm();
+        } else {
+          const error = await response.json();
+          this.showAlert('error', error.error || 'Error al guardar vehículo');
+        }
+      } catch (error) {
+        console.error('Error guardando vehículo:', error);
+        this.showAlert('error', 'Error al guardar vehículo');
+      }
+    },
+
+    async deleteVehiculo(id) {
+      if (!confirm('¿Estás seguro de eliminar este vehículo?')) return;
+      
+      try {
+        const response = await fetch(`${API_URL}/vehiculos/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${this.token}`
+          }
+        });
+
+        if (response.ok) {
+          this.showAlert('success', 'Vehículo eliminado');
+          await this.loadVehiculos();
+        } else {
+          const error = await response.json();
+          this.showAlert('error', error.error || 'Error al eliminar vehículo');
+        }
+      } catch (error) {
+        console.error('Error eliminando vehículo:', error);
+        this.showAlert('error', 'Error al eliminar vehículo');
+      }
+    },
+
+    async asignarVehiculo(choferId, vehiculoId) {
+      try {
+        const response = await fetch(`${API_URL}/deliveries/${choferId}/asignar-vehiculo`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+          },
+          body: JSON.stringify({ vehiculo_id: vehiculoId || null })
+        });
+
+        if (response.ok) {
+          this.showAlert('success', 'Vehículo asignado exitosamente');
+          await this.loadSectionData('choferes');
+        } else {
+          const error = await response.json();
+          this.showAlert('error', error.message || 'Error al asignar vehículo');
+        }
+      } catch (error) {
+        console.error('Error asignando vehículo:', error);
+        this.showAlert('error', 'Error al asignar vehículo');
+      }
+    },
+
+    async asignarChoferOrden(ordenId, choferId, volumenOrden) {
+      if (!choferId) {
+        // Si se deselecciona el chofer, solo actualizar la UI
+        this.showAlert('info', 'Chofer desasignado');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/ordenes/${ordenId}/asignar-chofer`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+          },
+          body: JSON.stringify({ delivery_id: choferId })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          this.showAlert('success', `Chofer asignado: ${result.data.chofer_nombre} (${result.data.capacidad}L)`);
+          await this.loadSectionData('ordenes');
+        } else {
+          this.showAlert('error', result.message || 'Error al asignar chofer');
+          // Recargar para revertir el cambio visual
+          await this.loadSectionData('ordenes');
+        }
+      } catch (error) {
+        console.error('Error asignando chofer:', error);
+        this.showAlert('error', 'Error al asignar chofer');
+        await this.loadSectionData('ordenes');
+      }
+    },
+
+    async togglePagoOrden(ordenId, pagado) {
+      try {
+        const response = await fetch(`${API_URL}/ordenes/${ordenId}/pago`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+          },
+          body: JSON.stringify({ pagado })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          this.showAlert('success', result.message);
+          await this.loadSectionData('ordenes');
+        } else {
+          this.showAlert('error', result.message || 'Error al actualizar estado de pago');
+          await this.loadSectionData('ordenes');
+        }
+      } catch (error) {
+        console.error('Error actualizando pago:', error);
+        this.showAlert('error', 'Error al actualizar estado de pago');
+        await this.loadSectionData('ordenes');
       }
     }
   },

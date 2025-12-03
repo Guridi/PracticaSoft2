@@ -61,71 +61,119 @@ router.post('/', authenticateToken, authorize(['admin', 'empleado', 'cliente']),
   const { 
     user_id, producto_id, delivery_id, almacen_id, 
     volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio, 
-    ventana_entrega_fin, precio_unitario, notas 
+    ventana_entrega_fin, precio_unitario, notas, payment_method
   } = req.body;
 
-  if (!user_id || !producto_id || !almacen_id || !volumen_solicitado || !ubicacion_entrega) {
+  if (!user_id || !producto_id || !volumen_solicitado || !ubicacion_entrega) {
     return res.status(400).json({ 
       success: false, 
-      message: 'Usuario, producto, almacén, volumen y ubicación son requeridos' 
+      message: 'Usuario, producto, volumen y ubicación son requeridos' 
     });
   }
 
-  // Verificar disponibilidad del producto en el almacén
-  db.get(
-    'SELECT cantidad FROM inventario_almacen WHERE almacen_id = ? AND producto_id = ?',
-    [almacen_id, producto_id],
-    (err, inventario) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: 'Error al verificar inventario' });
-      }
+  // Si no se proporciona almacén, buscar automáticamente el que tenga más disponibilidad
+  const findAlmacen = almacen_id ? 
+    Promise.resolve(almacen_id) : 
+    new Promise((resolve, reject) => {
+      db.get(
+        `SELECT almacen_id, cantidad 
+         FROM inventario_almacen 
+         WHERE producto_id = ? AND cantidad >= ?
+         ORDER BY cantidad DESC 
+         LIMIT 1`,
+        [producto_id, volumen_solicitado],
+        (err, row) => {
+          if (err) reject(err);
+          else if (!row) reject(new Error('No hay almacén con suficiente inventario'));
+          else resolve(row.almacen_id);
+        }
+      );
+    });
 
-      if (!inventario || inventario.cantidad < volumen_solicitado) {
-        return res.status(400).json({ 
-          success: false, 
-          message: `Producto insuficiente en almacén. Disponible: ${inventario ? inventario.cantidad : 0}` 
-        });
-      }
+  // Si no se proporciona precio_unitario, obtenerlo del producto
+  const findPrecio = precio_unitario ?
+    Promise.resolve(precio_unitario) :
+    new Promise((resolve, reject) => {
+      db.get(
+        'SELECT precio FROM productos WHERE id = ?',
+        [producto_id],
+        (err, row) => {
+          if (err) reject(err);
+          else if (!row) reject(new Error('Producto no encontrado'));
+          else resolve(row.precio);
+        }
+      );
+    });
 
-      const total = precio_unitario ? precio_unitario * volumen_solicitado : null;
-
-      // Reducir cantidad del inventario (producto sale del almacén)
-      db.run(
-        'UPDATE inventario_almacen SET cantidad = cantidad - ? WHERE almacen_id = ? AND producto_id = ?',
-        [volumen_solicitado, almacen_id, producto_id],
-        function(err) {
+  Promise.all([findAlmacen, findPrecio])
+    .then(([selectedAlmacenId, selectedPrecio]) => {
+      // Verificar disponibilidad del producto en el almacén seleccionado
+      db.get(
+        'SELECT cantidad FROM inventario_almacen WHERE almacen_id = ? AND producto_id = ?',
+        [selectedAlmacenId, producto_id],
+        (err, inventario) => {
           if (err) {
-            return res.status(500).json({ success: false, message: 'Error al actualizar inventario' });
+            return res.status(500).json({ success: false, message: 'Error al verificar inventario' });
           }
 
-          // Crear la orden
+          if (!inventario || inventario.cantidad < volumen_solicitado) {
+            return res.status(400).json({ 
+              success: false, 
+              message: `Producto insuficiente en almacén. Disponible: ${inventario ? inventario.cantidad : 0}` 
+            });
+          }
+
+          // Calcular total incluyendo ITBIS (18%)
+          const subtotal = selectedPrecio * volumen_solicitado;
+          const itbis = subtotal * 0.18;
+          const total = subtotal + itbis;
+
+          // Reducir cantidad del inventario
           db.run(
-            `INSERT INTO ordenes (
-              user_id, producto_id, delivery_id, almacen_id, 
-              volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio,
-              ventana_entrega_fin, precio_unitario, total, notas
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              user_id, producto_id, delivery_id || null, almacen_id,
-              volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio || null,
-              ventana_entrega_fin || null, precio_unitario || null, total, notas || ''
-            ],
+            'UPDATE inventario_almacen SET cantidad = cantidad - ? WHERE almacen_id = ? AND producto_id = ?',
+            [volumen_solicitado, selectedAlmacenId, producto_id],
             function(err) {
               if (err) {
-                return res.status(500).json({ success: false, message: 'Error al crear orden' });
+                return res.status(500).json({ success: false, message: 'Error al actualizar inventario' });
               }
 
-              res.status(201).json({
-                success: true,
-                message: 'Orden creada exitosamente',
-                data: { id: this.lastID }
-              });
+              // Crear la orden
+              db.run(
+                `INSERT INTO ordenes (
+                  user_id, producto_id, delivery_id, almacen_id, 
+                  volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio,
+                  ventana_entrega_fin, precio_unitario, total, pagado, payment_method, notas
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  user_id, producto_id, delivery_id || null, selectedAlmacenId,
+                  volumen_solicitado, ubicacion_entrega, ventana_entrega_inicio || null,
+                  ventana_entrega_fin || null, selectedPrecio, total, 0, payment_method || null, notas || ''
+                ],
+                function(err) {
+                  if (err) {
+                    console.error('Error creating order:', err);
+                    return res.status(500).json({ success: false, message: 'Error al crear orden' });
+                  }
+
+                  res.status(201).json({
+                    success: true,
+                    message: 'Orden creada exitosamente',
+                    data: { id: this.lastID, almacen_id: selectedAlmacenId, total }
+                  });
+                }
+              );
             }
           );
         }
       );
-    }
-  );
+    })
+    .catch(error => {
+      console.error('Error in order creation:', error);
+      res.status(400).json({ 
+        success: false, 
+        message: error.message || 'Error al procesar la orden' 
+      });
+    });
 });
 
 // PUT - Actualizar una orden
@@ -198,6 +246,104 @@ router.delete('/:id', authenticateToken, authorize(['admin']), (req, res) => {
         }
 
         res.json({ success: true, message: 'Orden eliminada exitosamente' });
+      });
+    }
+  );
+});
+
+// PUT - Asignar chofer a una orden
+router.put('/:id/asignar-chofer', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
+  const { delivery_id } = req.body;
+  const ordenId = req.params.id;
+
+  if (!delivery_id) {
+    return res.status(400).json({ success: false, message: 'delivery_id es requerido' });
+  }
+
+  // Obtener información de la orden
+  db.get(
+    'SELECT volumen_solicitado FROM ordenes WHERE id = ?',
+    [ordenId],
+    (err, orden) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Error al obtener orden' });
+      }
+      if (!orden) {
+        return res.status(404).json({ success: false, message: 'Orden no encontrada' });
+      }
+
+      // Obtener información del chofer y su vehículo
+      db.get(
+        `SELECT u.id, u.nombre, v.capacidad 
+         FROM users u
+         LEFT JOIN vehiculos v ON u.vehiculo_id = v.id
+         WHERE u.id = ? AND u.role = 'transportista'`,
+        [delivery_id],
+        (err, chofer) => {
+          if (err) {
+            return res.status(500).json({ success: false, message: 'Error al verificar chofer' });
+          }
+          if (!chofer) {
+            return res.status(404).json({ success: false, message: 'Chofer no encontrado' });
+          }
+          if (!chofer.capacidad) {
+            return res.status(400).json({ 
+              success: false, 
+              message: 'El chofer no tiene vehículo asignado' 
+            });
+          }
+
+          // Validar capacidad
+          if (chofer.capacidad < orden.volumen_solicitado) {
+            return res.status(400).json({
+              success: false,
+              message: `Capacidad insuficiente. Vehículo: ${chofer.capacidad}L, Orden: ${orden.volumen_solicitado}L`
+            });
+          }
+
+          // Asignar chofer a la orden
+          db.run(
+            'UPDATE ordenes SET delivery_id = ? WHERE id = ?',
+            [delivery_id, ordenId],
+            function(err) {
+              if (err) {
+                return res.status(500).json({ success: false, message: 'Error al asignar chofer' });
+              }
+              res.json({ 
+                success: true, 
+                message: 'Chofer asignado exitosamente',
+                data: { chofer_nombre: chofer.nombre, capacidad: chofer.capacidad }
+              });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+// PATCH - Marcar orden como pagada o no pagada
+router.patch('/:id/pago', authenticateToken, authorize(['admin', 'empleado']), (req, res) => {
+  const { pagado } = req.body;
+  const ordenId = req.params.id;
+
+  if (pagado === undefined || pagado === null) {
+    return res.status(400).json({ success: false, message: 'El campo pagado es requerido' });
+  }
+
+  db.run(
+    'UPDATE ordenes SET pagado = ? WHERE id = ?',
+    [pagado ? 1 : 0, ordenId],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Error al actualizar estado de pago' });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ success: false, message: 'Orden no encontrada' });
+      }
+      res.json({ 
+        success: true, 
+        message: pagado ? 'Orden marcada como pagada' : 'Orden marcada como no pagada'
       });
     }
   );

@@ -676,9 +676,6 @@
                                 <button @click="generateReport('clientes')" class="btn" style="background: #27ae60; color: white;">
                                     <span>📄</span> Generar PDF
                                 </button>
-                                <button @click="openModal('cliente')" class="btn btn-primary">
-                                    <span>+</span> Nuevo Cliente
-                                </button>
                                 <button @click="deleteSelected('clientes')" :disabled="!selectedItems.length" class="btn btn-danger">
                                     <span>🗑️</span> Eliminar ({{ selectedItems.length }})
                                 </button>
@@ -727,7 +724,7 @@
                         <div v-else class="empty-state">
                             <div class="icon">📋</div>
                             <h3>No hay clientes registrados</h3>
-                            <p>Comienza agregando tu primer cliente</p>
+                            <p>Los clientes se registran mediante el formulario de registro con rol "cliente"</p>
                         </div>
                     </div>
                 </div>
@@ -826,6 +823,7 @@
                                     <th>ID</th>
                                     <th>Nombre</th>
                                     <th>Ubicación</th>
+                                    <th>Unidad</th>
                                     <th>Capacidad Total</th>
                                     <th>Disponible</th>
                                     <th>Acciones</th>
@@ -837,8 +835,9 @@
                                     <td>{{ almacen.id }}</td>
                                     <td>{{ almacen.nombre }}</td>
                                     <td>{{ almacen.ubicacion }}</td>
-                                    <td>{{ almacen.capacidad_total }}</td>
-                                    <td>{{ almacen.capacidad_disponible }}</td>
+                                    <td><span class="badge badge-info">{{ almacen.unidad_capacidad }}</span></td>
+                                    <td>{{ almacen.capacidad_total }} {{ almacen.unidad_capacidad }}</td>
+                                    <td>{{ almacen.capacidad_disponible }} {{ almacen.unidad_capacidad }}</td>
                                     <td>
                                         <div class="table-actions">
                                             <button @click="openInventarioModal(almacen)" class="btn-small" style="background: #3498db;">📦 Inventario</button>
@@ -864,11 +863,11 @@
                         <div class="header-top">
                             <h1><span>🚗</span> Gestión de Choferes</h1>
                             <div class="action-buttons">
+                                <button @click="openVehiculosModal()" class="btn" style="background: #9b59b6; color: white;">
+                                    <span>🚙</span> Gestionar Vehículos
+                                </button>
                                 <button @click="generateReport('choferes')" class="btn" style="background: #27ae60; color: white;">
                                     <span>📄</span> Generar PDF
-                                </button>
-                                <button @click="openModal('chofer')" class="btn btn-primary">
-                                    <span>+</span> Nuevo Chofer
                                 </button>
                                 <button @click="deleteSelected('deliveries')" :disabled="!selectedItems.length" class="btn btn-danger">
                                     <span>🗑️</span> Eliminar ({{ selectedItems.length }})
@@ -891,9 +890,9 @@
                                     <th>Nombre</th>
                                     <th>Cédula</th>
                                     <th>Teléfono</th>
-                                    <th>Licencia</th>
-                                    <th>Placa</th>
-                                    <th>Capacidad</th>
+                                    <th>Email</th>
+                                    <th>Dirección</th>
+                                    <th>Vehículo</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -904,9 +903,19 @@
                                     <td>{{ delivery.nombre }}</td>
                                     <td>{{ delivery.cedula }}</td>
                                     <td>{{ delivery.telefono }}</td>
-                                    <td>{{ delivery.licencia }}</td>
-                                    <td>{{ delivery.vehiculo_placa }}</td>
-                                    <td>{{ delivery.vehiculo_capacidad }}</td>
+                                    <td>{{ delivery.email || '-' }}</td>
+                                    <td>{{ delivery.direccion || '-' }}</td>
+                                    <td>
+                                        <select @change="asignarVehiculo(delivery.id, $event.target.value)" :value="delivery.vehiculo_id || ''" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd;">
+                                            <option value="">Sin asignar</option>
+                                            <option v-for="vehiculo in vehiculos" :key="vehiculo.id" :value="vehiculo.id">
+                                                {{ vehiculo.placa }} - {{ vehiculo.capacidad }}L
+                                            </option>
+                                        </select>
+                                        <div v-if="delivery.placa" style="margin-top: 4px; font-size: 0.85em; color: #666;">
+                                            🚛 {{ delivery.placa }} | {{ delivery.marca }} {{ delivery.modelo }} | Capacidad: {{ delivery.capacidad }}L
+                                        </div>
+                                    </td>
                                     <td>
                                         <div class="table-actions">
                                             <button @click="editItem(delivery, 'chofer')" class="btn-small btn-edit">Editar</button>
@@ -920,7 +929,7 @@
                         <div v-else class="empty-state">
                             <div class="icon">🚗</div>
                             <h3>No hay choferes registrados</h3>
-                            <p>Comienza agregando tu primer chofer</p>
+                            <p>Los choferes se registran mediante el formulario de registro con rol "transportista"</p>
                         </div>
                     </div>
                 </div>
@@ -975,6 +984,7 @@
                                     <th>Volumen</th>
                                     <th>Almacén</th>
                                     <th>Chofer</th>
+                                    <th>Pagado</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -985,9 +995,26 @@
                                     <td>{{ orden.id }}</td>
                                     <td>{{ orden.cliente_nombre }}</td>
                                     <td>{{ orden.producto_nombre }}</td>
-                                    <td>{{ orden.volumen_solicitado }}</td>
+                                    <td>{{ orden.volumen_solicitado }}L</td>
                                     <td>{{ orden.almacen_nombre }}</td>
-                                    <td>{{ orden.delivery_nombre || 'Sin asignar' }}</td>
+                                    <td>
+                                        <select 
+                                            @change="asignarChoferOrden(orden.id, $event.target.value, orden.volumen_solicitado)" 
+                                            :value="orden.delivery_id || ''" 
+                                            style="padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer;">
+                                            <option value="">Sin asignar</option>
+                                            <option v-for="delivery in deliveries" :key="delivery.id" :value="delivery.id">
+                                                {{ delivery.nombre }} - {{ delivery.capacidad ? delivery.capacidad + 'L' : 'Sin vehículo' }}
+                                            </option>
+                                        </select>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <input 
+                                            type="checkbox" 
+                                            :checked="orden.pagado === 1"
+                                            @change="togglePagoOrden(orden.id, $event.target.checked)"
+                                            style="width: 20px; height: 20px; cursor: pointer;">
+                                    </td>
                                     <td>
                                         <span :class="['badge', getBadgeClass(orden.estado)]">
                                             {{ orden.estado || 'pendiente' }}
@@ -1102,8 +1129,8 @@
                             <input type="text" v-model="currentForm.nombre" required>
                         </div>
                         <div class="form-group">
-                            <label>Dirección *</label>
-                            <input type="text" v-model="currentForm.direccion" required>
+                            <label>Email *</label>
+                            <input type="email" v-model="currentForm.email" required>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -1116,12 +1143,8 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" v-model="currentForm.email">
-                        </div>
-                        <div class="form-group">
-                            <label>Condiciones Comerciales</label>
-                            <textarea v-model="currentForm.condiciones_comerciales" rows="3"></textarea>
+                            <label>Dirección</label>
+                            <input type="text" v-model="currentForm.direccion">
                         </div>
                     </form>
 
@@ -1178,6 +1201,15 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
+                                <label>Unidad de Capacidad *</label>
+                                <select v-model="currentForm.unidad_capacidad" required>
+                                    <option value="">Seleccionar</option>
+                                    <option value="Galón">Galón</option>
+                                    <option value="Litro">Litro</option>
+                                    <option value="Barril">Barril</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <label>Capacidad Total *</label>
                                 <input type="number" step="0.01" v-model="currentForm.capacidad_total" required>
                             </div>
@@ -1190,6 +1222,10 @@
                             <label>Nombre *</label>
                             <input type="text" v-model="currentForm.nombre" required>
                         </div>
+                        <div class="form-group">
+                            <label>Email *</label>
+                            <input type="email" v-model="currentForm.email" required>
+                        </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Cédula *</label>
@@ -1200,19 +1236,9 @@
                                 <input type="tel" v-model="currentForm.telefono" @input="formatTelefonoModal" placeholder="000-000-0000" maxlength="12" required>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Licencia *</label>
-                                <input type="text" v-model="currentForm.licencia" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Placa del Vehículo *</label>
-                                <input type="text" v-model="currentForm.vehiculo_placa" required>
-                            </div>
-                        </div>
                         <div class="form-group">
-                            <label>Capacidad del Vehículo *</label>
-                            <input type="number" step="0.01" v-model="currentForm.vehiculo_capacidad" required>
+                            <label>Dirección</label>
+                            <input type="text" v-model="currentForm.direccion">
                         </div>
                     </form>
 
@@ -1257,6 +1283,15 @@
                                     </option>
                                 </select>
                             </div>
+                        </div>
+                        <div v-if="currentForm.delivery_id" style="background: #e8f4f8; padding: 10px; border-radius: 4px; font-size: 0.9em; margin-bottom: 15px;">
+                            <strong>ℹ️ Info Vehículo:</strong>
+                            <span v-if="deliveryCapacidad > 0">
+                                Capacidad disponible: {{ deliveryCapacidad }}L
+                            </span>
+                            <span v-else style="color: #e74c3c;">
+                                ⚠️ Chofer sin vehículo asignado
+                            </span>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -1358,14 +1393,14 @@
 
                     <!-- Formulario agregar producto -->
                     <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                        <h3 style="margin-bottom: 15px;">➕ Agregar Producto</h3>
+                        <h3 style="margin-bottom: 15px;">➕ Agregar Producto ({{ currentAlmacen.unidad_capacidad }})</h3>
                         <form @submit.prevent="addProductoToInventario" style="display: flex; gap: 10px; align-items: end;">
                             <div style="flex: 1;">
-                                <label>Producto *</label>
+                                <label>Producto * (Solo {{ currentAlmacen.unidad_capacidad }})</label>
                                 <select v-model="inventarioForm.producto_id" required>
                                     <option value="">Seleccionar producto</option>
-                                    <option v-for="producto in productos" :key="producto.id" :value="producto.id">
-                                        {{ producto.nombre }} ({{ producto.tipo }})
+                                    <option v-for="producto in productosCompatibles" :key="producto.id" :value="producto.id">
+                                        {{ producto.nombre }} ({{ producto.tipo }}) - {{ producto.unidad }}
                                     </option>
                                 </select>
                             </div>
@@ -1414,6 +1449,101 @@
 
                 <div class="modal-footer">
                     <button type="button" @click="closeInventarioModal" class="btn btn-secondary">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Gestión de Vehículos -->
+        <div v-if="showVehiculosModal" class="modal-overlay" @click.self="closeVehiculosModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2><span>🚙</span> Gestión de Vehículos</h2>
+                    <button @click="closeVehiculosModal" class="close-btn">&times;</button>
+                </div>
+
+                <div class="modal-body" style="max-height: 600px; overflow-y: auto;">
+                    <!-- Tabla de referencia -->
+                    <div style="background: #f0f8ff; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 0.85em;">
+                        <strong>📊 Conversiones estándar:</strong> 1 Galón = 3.79L | 1 Barril = 159L
+                    </div>
+                    
+                    <!-- Formulario para agregar/editar vehículo -->
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px;">{{ editingVehiculoId ? 'Editar Vehículo' : 'Nuevo Vehículo' }}</h3>
+                        <form @submit.prevent="saveVehiculo">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Placa *</label>
+                                    <input type="text" v-model="vehiculoForm.placa" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Marca *</label>
+                                    <input type="text" v-model="vehiculoForm.marca" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Modelo *</label>
+                                    <input type="text" v-model="vehiculoForm.modelo" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Año</label>
+                                    <input type="number" v-model="vehiculoForm.año" min="1900" max="2100">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Capacidad (L) *</label>
+                                    <input type="number" v-model="vehiculoForm.capacidad" step="0.01" required>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="submit" class="btn btn-primary">
+                                    {{ editingVehiculoId ? 'Actualizar' : 'Agregar' }}
+                                </button>
+                                <button type="button" @click="resetVehiculoForm" class="btn btn-secondary" v-if="editingVehiculoId">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Lista de vehículos -->
+                    <h3 style="margin-bottom: 15px;">Vehículos Registrados</h3>
+                    <table class="data-table" v-if="vehiculos.length > 0">
+                        <thead>
+                            <tr>
+                                <th>Placa</th>
+                                <th>Marca</th>
+                                <th>Modelo</th>
+                                <th>Año</th>
+                                <th>Capacidad</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="vehiculo in vehiculos" :key="vehiculo.id">
+                                <td><strong>{{ vehiculo.placa }}</strong></td>
+                                <td>{{ vehiculo.marca }}</td>
+                                <td>{{ vehiculo.modelo }}</td>
+                                <td>{{ vehiculo.año || '-' }}</td>
+                                <td>{{ vehiculo.capacidad }} L</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button @click="editVehiculo(vehiculo)" class="btn-small btn-edit">Editar</button>
+                                        <button @click="deleteVehiculo(vehiculo.id)" class="btn-small btn-delete-small">Eliminar</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div v-else class="empty-state">
+                        <p>No hay vehículos registrados</p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" @click="closeVehiculosModal" class="btn btn-secondary">Cerrar</button>
                 </div>
             </div>
         </div>

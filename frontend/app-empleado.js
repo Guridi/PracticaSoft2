@@ -457,6 +457,65 @@ createApp({
       } finally {
         this.loading = false;
       }
+    },
+
+    async asignarChoferOrden(ordenId, choferId, volumenOrden) {
+      if (!choferId) {
+        this.showAlert('info', 'Chofer desasignado');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/ordenes/${ordenId}/asignar-chofer`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+          },
+          body: JSON.stringify({ delivery_id: choferId })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          this.showAlert('success', `Chofer asignado: ${result.data.chofer_nombre} (${result.data.capacidad}L)`);
+          await this.loadSectionData('ordenes');
+        } else {
+          this.showAlert('error', result.message || 'Error al asignar chofer');
+          await this.loadSectionData('ordenes');
+        }
+      } catch (error) {
+        console.error('Error asignando chofer:', error);
+        this.showAlert('error', 'Error al asignar chofer');
+        await this.loadSectionData('ordenes');
+      }
+    },
+
+    async togglePagoOrden(ordenId, pagado) {
+      try {
+        const response = await fetch(`${API_URL}/ordenes/${ordenId}/pago`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+          },
+          body: JSON.stringify({ pagado })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          this.showAlert('success', result.message);
+          await this.loadSectionData('ordenes');
+        } else {
+          this.showAlert('error', result.message || 'Error al actualizar estado de pago');
+          await this.loadSectionData('ordenes');
+        }
+      } catch (error) {
+        console.error('Error actualizando pago:', error);
+        this.showAlert('error', 'Error al actualizar estado de pago');
+        await this.loadSectionData('ordenes');
+      }
     }
   },
   

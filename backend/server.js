@@ -10,6 +10,7 @@ const ordenesRouter = require('./routes/ordenes');
 const inventarioRouter = require('./routes/inventario');
 const usersRouter = require('./routes/users');
 const reportesRouter = require('./routes/reportes');
+const vehiculosRouter = require('./routes/vehiculos');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,6 +36,7 @@ app.use('/api/deliveries', deliveriesRouter);
 app.use('/api/ordenes', ordenesRouter);
 app.use('/api/inventario', inventarioRouter);
 app.use('/api/reportes', reportesRouter);
+app.use('/api/vehiculos', vehiculosRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

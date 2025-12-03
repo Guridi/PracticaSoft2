@@ -405,4 +405,135 @@ router.get('/ordenes', authenticateToken, authorize(['admin', 'empleado', 'clien
   }
 });
 
+// Factura Individual de Orden
+router.get('/factura/:ordenId', authenticateToken, async (req, res) => {
+  try {
+    const ordenId = req.params.ordenId;
+
+    // Obtener datos de la orden con joins
+    const orden = await new Promise((resolve, reject) => {
+      db.get(
+        `SELECT 
+          o.*,
+          u.nombre as cliente_nombre, u.email as cliente_email, u.telefono as cliente_telefono, u.direccion as cliente_direccion,
+          p.nombre as producto_nombre, p.tipo as producto_tipo, p.unidad as producto_unidad,
+          a.nombre as almacen_nombre, a.ubicacion as almacen_ubicacion,
+          d.nombre as chofer_nombre
+         FROM ordenes o
+         LEFT JOIN users u ON o.user_id = u.id
+         LEFT JOIN productos p ON o.producto_id = p.id
+         LEFT JOIN almacenes a ON o.almacen_id = a.id
+         LEFT JOIN users d ON o.delivery_id = d.id
+         WHERE o.id = ?`,
+        [ordenId],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        }
+      );
+    });
+
+    if (!orden) {
+      return res.status(404).json({ success: false, message: 'Orden no encontrada' });
+    }
+
+    const doc = new PDFDocument({ margin: 50 });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=factura_orden_${ordenId}.pdf`);
+    doc.pipe(res);
+
+    // Header - Título principal
+    doc.rect(50, 50, 512, 80).fill('#667eea');
+    doc.fontSize(24).fillColor('#FFFFFF').font('Helvetica-Bold')
+       .text('FACTURA', 50, 70, { align: 'center', width: 512 });
+    doc.fontSize(12).font('Helvetica')
+       .text(`Orden #${ordenId}`, 50, 100, { align: 'center', width: 512 });
+    
+    // Fecha de emisión
+    doc.fontSize(10)
+       .text(`Fecha de Emisión: ${formatDate(new Date())}`, 50, 120, { align: 'right', width: 512 });
+
+    // Información del cliente
+    let yPos = 160;
+    doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold')
+       .text('Información del Cliente', 50, yPos);
+    
+    yPos += 25;
+    doc.fontSize(10).font('Helvetica')
+       .text(`Nombre: ${orden.cliente_nombre}`, 50, yPos)
+       .text(`Email: ${orden.cliente_email || 'N/A'}`, 50, yPos + 15)
+       .text(`Teléfono: ${orden.cliente_telefono || 'N/A'}`, 50, yPos + 30)
+       .text(`Dirección: ${orden.cliente_direccion || 'N/A'}`, 50, yPos + 45);
+
+    // Detalles de la orden
+    yPos += 90;
+    doc.fontSize(14).font('Helvetica-Bold')
+       .text('Detalles de la Orden', 50, yPos);
+
+    yPos += 25;
+    doc.fontSize(10).font('Helvetica')
+       .text(`Producto: ${orden.producto_nombre} (${orden.producto_tipo})`, 50, yPos)
+       .text(`Unidad: ${orden.producto_unidad}`, 50, yPos + 15)
+       .text(`Cantidad: ${orden.volumen_solicitado} ${orden.producto_unidad}(s)`, 50, yPos + 30)
+       .text(`Ubicación de Entrega: ${orden.ubicacion_entrega}`, 50, yPos + 45)
+       .text(`Almacén: ${orden.almacen_nombre} - ${orden.almacen_ubicacion || ''}`, 50, yPos + 60)
+       .text(`Chofer: ${orden.chofer_nombre || 'No asignado'}`, 50, yPos + 75)
+       .text(`Método de Pago: ${orden.payment_method || 'No especificado'}`, 50, yPos + 90)
+       .text(`Estado: ${orden.estado}`, 50, yPos + 105)
+       .text(`Pagado: ${orden.pagado ? 'Sí' : 'No'}`, 50, yPos + 120);
+
+    // Desglose de costos
+    yPos += 160;
+    doc.rect(50, yPos, 512, 150).stroke('#e2e8f0');
+    
+    yPos += 20;
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#667eea')
+       .text('Desglose de Costos', 50, yPos, { align: 'center', width: 512 });
+
+    yPos += 30;
+    const subtotal = (orden.total || 0) / 1.18; // Calcular subtotal sin ITBIS
+    const itbis = subtotal * 0.18;
+    const total = orden.total || 0;
+
+    doc.fontSize(11).font('Helvetica').fillColor('#000000');
+    
+    // Subtotal
+    doc.text('Subtotal:', 80, yPos, { width: 350 });
+    doc.text(`RD$ ${subtotal.toFixed(2)}`, 430, yPos, { align: 'right', width: 100 });
+    
+    // ITBIS
+    yPos += 20;
+    doc.text('ITBIS (18%):', 80, yPos, { width: 350 });
+    doc.text(`RD$ ${itbis.toFixed(2)}`, 430, yPos, { align: 'right', width: 100 });
+    
+    // Línea separadora
+    yPos += 25;
+    doc.moveTo(80, yPos).lineTo(530, yPos).stroke('#667eea');
+    
+    // Total
+    yPos += 15;
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#667eea');
+    doc.text('TOTAL:', 80, yPos, { width: 350 });
+    doc.text(`RD$ ${total.toFixed(2)}`, 430, yPos, { align: 'right', width: 100 });
+
+    // Notas al pie
+    if (orden.notas) {
+      yPos += 50;
+      doc.fontSize(10).font('Helvetica').fillColor('#666666')
+         .text('Notas:', 50, yPos)
+         .text(orden.notas, 50, yPos + 15, { width: 512 });
+    }
+
+    // Pie de página
+    doc.fontSize(8).fillColor('#999999')
+       .text('Gracias por su preferencia', 50, 750, { align: 'center', width: 512 });
+    doc.text('Sistema de Gestión de Combustible', 50, 765, { align: 'center', width: 512 });
+
+    doc.end();
+  } catch (error) {
+    console.error('Error generando factura:', error);
+    res.status(500).json({ success: false, message: 'Error al generar factura' });
+  }
+});
+
 module.exports = router;

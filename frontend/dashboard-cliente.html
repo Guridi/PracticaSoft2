@@ -264,6 +264,221 @@
             font-size: 1.1rem;
         }
 
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 550px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 1.8rem;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .order-summary {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .summary-value {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .summary-value.highlight {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .conversion-note {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .price-breakdown {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-size: 0.95rem;
+        }
+
+        .price-row.total {
+            border-top: 2px solid #667eea;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .payment-method {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .payment-method:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+
+        .payment-method.selected {
+            border-color: #667eea;
+            background: #eef2ff;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .payment-method-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-cancel:hover {
+            background: #cbd5e0;
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-confirm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .main-container {
@@ -280,6 +495,18 @@
 
             .section-header h2 {
                 font-size: 1.2rem;
+            }
+
+            .payment-methods {
+                grid-template-columns: 1fr;
+            }
+
+            .modal {
+                width: 95%;
+            }
+
+            .modal-body {
+                padding: 20px;
             }
         }
     </style>
@@ -319,50 +546,28 @@
 
                         <div class="form-group">
                             <label>Producto:</label>
-                            <select v-model="newOrder.producto_id" required>
+                            <select v-model="newOrder.producto_id" required @change="onProductoChange">
                                 <option value="">Seleccione un producto</option>
                                 <option v-for="producto in productos" :key="producto.id" :value="producto.id">
-                                    {{ producto.nombre }} - {{ producto.tipo }}
+                                    {{ producto.nombre }} - {{ producto.tipo }} ({{ producto.unidad }})
                                 </option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label>Almacén:</label>
-                            <select v-model="newOrder.almacen_id" required>
-                                <option value="">Seleccione un almacén</option>
-                                <option v-for="almacen in almacenes" :key="almacen.id" :value="almacen.id">
-                                    {{ almacen.nombre }} - Cap. disponible: {{ almacen.capacidad_disponible }}
-                                </option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Chofer:</label>
-                            <select v-model="newOrder.chofer_id" required>
-                                <option value="">Seleccione un chofer</option>
-                                <option v-for="delivery in deliveries" :key="delivery.id" :value="delivery.id">
-                                    {{ delivery.nombre }} - {{ delivery.vehiculo_placa }}
-                                </option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Volumen Solicitado:</label>
-                            <input type="number" v-model.number="newOrder.volumen_solicitado" 
-                                   min="0" step="0.01" required placeholder="0.00">
+                            <label>Cantidad:</label>
+                            <input type="number" v-model.number="newOrder.cantidad" 
+                                   min="0.01" step="0.01" required placeholder="0.00"
+                                   @input="calculateTotal">
+                            <small v-if="selectedProducto" style="color: #666; display: block; margin-top: 4px;">
+                                En {{ selectedProducto.unidad }}s
+                            </small>
                         </div>
 
                         <div class="form-group">
                             <label>Ubicación de Entrega:</label>
                             <input type="text" v-model="newOrder.ubicacion_entrega" required
                                    placeholder="Dirección de entrega">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Precio Unitario (opcional):</label>
-                            <input type="number" v-model.number="newOrder.precio_unitario" 
-                                   min="0" step="0.01" placeholder="0.00">
                         </div>
 
                         <div class="form-group">
@@ -401,6 +606,7 @@
                                 <th>Estado</th>
                                 <th>Fecha</th>
                                 <th>Notas</th>
+                                <th>Factura</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -416,9 +622,112 @@
                                 <td><span :class="'status-' + order.estado">{{ order.estado }}</span></td>
                                 <td>{{ formatDate(order.fecha_orden) }}</td>
                                 <td>{{ order.notas || '-' }}</td>
+                                <td>
+                                    <button 
+                                        @click="downloadFactura(order.id)" 
+                                        class="btn-icon" 
+                                        title="Descargar Factura"
+                                        :disabled="!order.pagado">
+                                        📄
+                                    </button>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmación de Pago -->
+        <div v-if="showPaymentModal" class="modal-overlay" @click.self="closePaymentModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>💳 Confirmación de Pago</h2>
+                    <button @click="closePaymentModal" class="modal-close">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Resumen de la Orden -->
+                    <div class="order-summary">
+                        <div class="summary-row">
+                            <span class="summary-label">Producto:</span>
+                            <span class="summary-value">{{ selectedProducto?.nombre }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Tipo:</span>
+                            <span class="summary-value">{{ selectedProducto?.tipo }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Cantidad:</span>
+                            <span class="summary-value">{{ newOrder.cantidad }} {{ selectedProducto?.unidad }}(s)</span>
+                        </div>
+                        <div class="summary-row" v-if="volumenEnLitros !== newOrder.cantidad">
+                            <span class="summary-label">Equivalente:</span>
+                            <span class="summary-value">{{ volumenEnLitros.toFixed(2) }} Litros</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Precio Unitario:</span>
+                            <span class="summary-value">RD$ {{ selectedProducto?.precio?.toFixed(2) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Nota de Conversión -->
+                    <div class="conversion-note" v-if="volumenEnLitros !== newOrder.cantidad">
+                        <span>ℹ️</span>
+                        <span>El cálculo se realiza automáticamente según la unidad del producto</span>
+                    </div>
+
+                    <!-- Desglose de Precios -->
+                    <div class="price-breakdown">
+                        <h3 style="margin-bottom: 15px; color: #2d3748;">Desglose de Pago</h3>
+                        <div class="price-row">
+                            <span>Subtotal:</span>
+                            <span>RD$ {{ calculatedSubtotal.toFixed(2) }}</span>
+                        </div>
+                        <div class="price-row">
+                            <span>ITBIS (18%):</span>
+                            <span>RD$ {{ calculatedITBIS.toFixed(2) }}</span>
+                        </div>
+                        <div class="price-row total">
+                            <span>Total a Pagar:</span>
+                            <span>RD$ {{ calculatedTotal.toFixed(2) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Métodos de Pago -->
+                    <div>
+                        <h3 style="margin-bottom: 15px; color: #2d3748;">Método de Pago</h3>
+                        <div class="payment-methods">
+                            <div 
+                                class="payment-method" 
+                                :class="{ selected: paymentMethod === 'efectivo' }"
+                                @click="paymentMethod = 'efectivo'">
+                                <div class="payment-method-icon">💵</div>
+                                <div>Efectivo</div>
+                            </div>
+                            <div 
+                                class="payment-method" 
+                                :class="{ selected: paymentMethod === 'tarjeta' }"
+                                @click="paymentMethod = 'tarjeta'">
+                                <div class="payment-method-icon">💳</div>
+                                <div>Tarjeta</div>
+                            </div>
+                            <div 
+                                class="payment-method" 
+                                :class="{ selected: paymentMethod === 'transferencia' }"
+                                @click="paymentMethod = 'transferencia'">
+                                <div class="payment-method-icon">🏦</div>
+                                <div>Transferencia</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button @click="closePaymentModal" class="btn btn-cancel">Cancelar</button>
+                    <button @click="confirmPayment" class="btn btn-confirm" :disabled="!paymentMethod">
+                        Confirmar Pago
+                    </button>
                 </div>
             </div>
         </div>

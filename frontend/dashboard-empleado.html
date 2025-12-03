@@ -891,6 +891,7 @@
                                     <th>Volumen</th>
                                     <th>Almacén</th>
                                     <th>Chofer</th>
+                                    <th>Pagado</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -901,9 +902,26 @@
                                     <td>{{ orden.id }}</td>
                                     <td>{{ orden.cliente_nombre }}</td>
                                     <td>{{ orden.producto_nombre }}</td>
-                                    <td>{{ orden.volumen_solicitado }}</td>
+                                    <td>{{ orden.volumen_solicitado }}L</td>
                                     <td>{{ orden.almacen_nombre }}</td>
-                                    <td>{{ orden.delivery_nombre || 'Sin asignar' }}</td>
+                                    <td>
+                                        <select 
+                                            @change="asignarChoferOrden(orden.id, $event.target.value, orden.volumen_solicitado)" 
+                                            :value="orden.delivery_id || ''" 
+                                            style="padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer;">
+                                            <option value="">Sin asignar</option>
+                                            <option v-for="delivery in deliveries" :key="delivery.id" :value="delivery.id">
+                                                {{ delivery.nombre }} - {{ delivery.capacidad ? delivery.capacidad + 'L' : 'Sin vehículo' }}
+                                            </option>
+                                        </select>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <input 
+                                            type="checkbox" 
+                                            :checked="orden.pagado === 1"
+                                            @change="togglePagoOrden(orden.id, $event.target.checked)"
+                                            style="width: 20px; height: 20px; cursor: pointer;">
+                                    </td>
                                     <td>
                                         <span :class="['badge', getBadgeClass(orden.estado)]">
                                             {{ orden.estado || 'pendiente' }}
