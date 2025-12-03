@@ -16,6 +16,25 @@ function formatDate(date) {
   return `${day}/${month}/${year} - ${hours}:${minutes}`;
 }
 
+// Función helper para crear header consistente en todos los reportes
+function createReportHeader(doc, titulo, subtitulo = null) {
+  // Header - Título principal con fondo morado
+  doc.rect(50, 50, 512, 80).fill('#667eea');
+  doc.fontSize(24).fillColor('#FFFFFF').font('Helvetica-Bold')
+     .text(titulo, 50, 70, { align: 'center', width: 512 });
+  
+  if (subtitulo) {
+    doc.fontSize(12).font('Helvetica')
+       .text(subtitulo, 50, 100, { align: 'center', width: 512 });
+  }
+  
+  // Fecha de emisión
+  doc.fontSize(10)
+     .text(`Fecha de Emisión: ${formatDate(new Date())}`, 50, 120, { align: 'right', width: 512 });
+  
+  return 160; // Retorna la posición Y donde continuar
+}
+
 // Reporte de Clientes
 router.get('/clientes', authenticateToken, authorize(['admin', 'empleado']), async (req, res) => {
   try {
@@ -31,53 +50,55 @@ router.get('/clientes', authenticateToken, authorize(['admin', 'empleado']), asy
     res.setHeader('Content-Disposition', 'attachment; filename=reporte_clientes.pdf');
     doc.pipe(res);
 
-    // Header con logo e info del usuario
-    doc.rect(50, 50, 180, 60).fill('#6B9BD1');
-    doc.fontSize(16).fillColor('#FFFFFF').text('Logo', 110, 73);
+    // Header consistente
+    let yPos = createReportHeader(doc, 'REPORTE DE CLIENTES', `Total: ${clientes.length} registros`);
+
+    // Información del reporte
+    yPos += 20;
+    doc.fillColor('#000000').fontSize(12).font('Helvetica-Bold').fillColor('#667eea')
+       .text('Información del Reporte', 50, yPos);
     
-    doc.rect(370, 50, 192, 60).fill('#6B9BD1');
-    doc.fontSize(9).fillColor('#FFFFFF')
-       .text(`${req.user.nombre}`, 380, 58, { width: 172 })
-       .text(req.user.direccion || 'Sin dirección', 380, 74, { width: 172 })
-       .text(req.user.telefono ? `Tel: ${req.user.telefono}` : 'Sin teléfono', 380, 90, { width: 172 });
-
-    // Título
-    doc.fillColor('#000000').fontSize(18).text('Reporte de Clientes', 50, 130, { align: 'center' });
-    doc.moveDown(2);
-
-    // Detalles
-    doc.fontSize(10);
-    const detallesY = 180;
-    doc.rect(50, detallesY, 200, 120).fill('#6B9BD1');
-    doc.fillColor('#FFFFFF')
-       .text('Detalles del reporte', 100, detallesY + 10)
-       .text(`Generado: ${formatDate(new Date())}`, 70, detallesY + 30)
-       .text(`Total de registros: ${clientes.length}`, 70, detallesY + 50)
-       .text('Tipo: Clientes', 70, detallesY + 70);
+    yPos += 25;
+    doc.fontSize(10).font('Helvetica').fillColor('#000000')
+       .text(`Generado por: ${req.user.nombre}`, 50, yPos)
+       .text(`Total de registros: ${clientes.length}`, 50, yPos + 15)
+       .text(`Fecha: ${formatDate(new Date())}`, 50, yPos + 30);
 
     // Tabla
-    const tableTop = 330;
+    yPos += 70;
+    const tableTop = yPos;
     const itemHeight = 25;
     
-    doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
-    doc.text('ID', 50, tableTop);
-    doc.text('Nombre', 100, tableTop);
-    doc.text('Cédula', 250, tableTop);
-    doc.text('Teléfono', 350, tableTop);
-    doc.text('Email', 450, tableTop);
-    
-    doc.moveTo(50, tableTop + 15).lineTo(560, tableTop + 15).stroke();
+    // Encabezado de tabla con estilo
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#FFFFFF');
+    doc.rect(50, tableTop, 512, 25).fill('#667eea');
+    doc.text('ID', 60, tableTop + 8, { width: 30 });
+    doc.text('Nombre', 100, tableTop + 8, { width: 140 });
+    doc.text('Cédula', 250, tableTop + 8, { width: 90 });
+    doc.text('Teléfono', 350, tableTop + 8, { width: 90 });
+    doc.text('Email', 450, tableTop + 8, { width: 100 });
 
-    doc.font('Helvetica').fontSize(9);
+    // Filas con alternancia de color
+    doc.font('Helvetica').fontSize(9).fillColor('#000000');
     clientes.forEach((cliente, i) => {
-      const y = tableTop + 20 + (i * itemHeight);
+      const y = tableTop + 25 + (i * itemHeight);
       if (y > 750) return; // Evitar desbordamiento de página
-      doc.text(cliente.id, 50, y);
-      doc.text(cliente.nombre || '-', 100, y, { width: 140 });
-      doc.text(cliente.cedula || '-', 250, y);
-      doc.text(cliente.telefono || '-', 350, y);
-      doc.text(cliente.email || '-', 450, y, { width: 100 });
+      
+      if (i % 2 === 1) {
+        doc.rect(50, y, 512, itemHeight).fill('#f7fafc');
+      }
+      
+      doc.fillColor('#000000')
+         .text(cliente.id, 60, y + 8, { width: 30 })
+         .text(cliente.nombre || '-', 100, y + 8, { width: 140 })
+         .text(cliente.cedula || '-', 250, y + 8, { width: 90 })
+         .text(cliente.telefono || '-', 350, y + 8, { width: 90 })
+         .text(cliente.email || '-', 450, y + 8, { width: 100 });
     });
+    
+    // Borde de tabla
+    const tableHeight = Math.min(clientes.length * itemHeight + 25, 750 - tableTop);
+    doc.rect(50, tableTop, 512, tableHeight).stroke('#e2e8f0');
 
     doc.end();
   } catch (error) {
@@ -101,48 +122,55 @@ router.get('/empleados', authenticateToken, authorize(['admin']), async (req, re
     res.setHeader('Content-Disposition', 'attachment; filename=reporte_empleados.pdf');
     doc.pipe(res);
 
-    doc.rect(50, 50, 180, 60).fill('#6B9BD1');
-    doc.fontSize(16).fillColor('#FFFFFF').text('Logo', 110, 73);
+    // Header consistente
+    let yPos = createReportHeader(doc, 'REPORTE DE EMPLEADOS', `Total: ${empleados.length} registros`);
+
+    // Información del reporte
+    yPos += 20;
+    doc.fillColor('#000000').fontSize(12).font('Helvetica-Bold').fillColor('#667eea')
+       .text('Información del Reporte', 50, yPos);
     
-    doc.rect(370, 50, 192, 60).fill('#6B9BD1');
-    doc.fontSize(9).fillColor('#FFFFFF')
-       .text(`${req.user.nombre}`, 380, 58, { width: 172 })
-       .text(req.user.direccion || 'Sin dirección', 380, 74, { width: 172 })
-       .text(req.user.telefono ? `Tel: ${req.user.telefono}` : 'Sin teléfono', 380, 90, { width: 172 });
+    yPos += 25;
+    doc.fontSize(10).font('Helvetica').fillColor('#000000')
+       .text(`Generado por: ${req.user.nombre}`, 50, yPos)
+       .text(`Total de registros: ${empleados.length}`, 50, yPos + 15)
+       .text(`Fecha: ${formatDate(new Date())}`, 50, yPos + 30);
 
-    doc.fillColor('#000000').fontSize(18).text('Reporte de Empleados', 50, 130, { align: 'center' });
-    doc.moveDown(2);
-
-    const detallesY = 180;
-    doc.rect(50, detallesY, 200, 120).fill('#6B9BD1');
-    doc.fillColor('#FFFFFF')
-       .text('Detalles del reporte', 100, detallesY + 10)
-       .text(`Generado: ${formatDate(new Date())}`, 70, detallesY + 30)
-       .text(`Total de registros: ${empleados.length}`, 70, detallesY + 50)
-       .text('Tipo: Empleados', 70, detallesY + 70);
-
-    const tableTop = 330;
+    // Tabla
+    yPos += 70;
+    const tableTop = yPos;
     const itemHeight = 25;
     
-    doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
-    doc.text('ID', 50, tableTop);
-    doc.text('Nombre', 100, tableTop);
-    doc.text('Cédula', 250, tableTop);
-    doc.text('Teléfono', 350, tableTop);
-    doc.text('Email', 450, tableTop);
-    
-    doc.moveTo(50, tableTop + 15).lineTo(560, tableTop + 15).stroke();
+    // Encabezado de tabla con estilo
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#FFFFFF');
+    doc.rect(50, tableTop, 512, 25).fill('#667eea');
+    doc.text('ID', 60, tableTop + 8, { width: 30 });
+    doc.text('Nombre', 100, tableTop + 8, { width: 140 });
+    doc.text('Cédula', 250, tableTop + 8, { width: 90 });
+    doc.text('Teléfono', 350, tableTop + 8, { width: 90 });
+    doc.text('Email', 450, tableTop + 8, { width: 100 });
 
-    doc.font('Helvetica').fontSize(9);
+    // Filas con alternancia de color
+    doc.font('Helvetica').fontSize(9).fillColor('#000000');
     empleados.forEach((empleado, i) => {
-      const y = tableTop + 20 + (i * itemHeight);
+      const y = tableTop + 25 + (i * itemHeight);
       if (y > 750) return;
-      doc.text(empleado.id, 50, y);
-      doc.text(empleado.nombre || '-', 100, y, { width: 140 });
-      doc.text(empleado.cedula || '-', 250, y);
-      doc.text(empleado.telefono || '-', 350, y);
-      doc.text(empleado.email || '-', 450, y, { width: 100 });
+      
+      if (i % 2 === 1) {
+        doc.rect(50, y, 512, itemHeight).fill('#f7fafc');
+      }
+      
+      doc.fillColor('#000000')
+         .text(empleado.id, 60, y + 8, { width: 30 })
+         .text(empleado.nombre || '-', 100, y + 8, { width: 140 })
+         .text(empleado.cedula || '-', 250, y + 8, { width: 90 })
+         .text(empleado.telefono || '-', 350, y + 8, { width: 90 })
+         .text(empleado.email || '-', 450, y + 8, { width: 100 });
     });
+    
+    // Borde de tabla
+    const tableHeight = Math.min(empleados.length * itemHeight + 25, 750 - tableTop);
+    doc.rect(50, tableTop, 512, tableHeight).stroke('#e2e8f0');
 
     doc.end();
   } catch (error) {
@@ -166,47 +194,55 @@ router.get('/productos', authenticateToken, authorize(['admin', 'empleado']), as
     res.setHeader('Content-Disposition', 'attachment; filename=reporte_productos.pdf');
     doc.pipe(res);
 
-    doc.rect(50, 50, 180, 60).fill('#6B9BD1');
-    doc.fontSize(16).fillColor('#FFFFFF').text('Logo', 110, 73);
+    // Header consistente
+    let yPos = createReportHeader(doc, 'REPORTE DE PRODUCTOS', `Total: ${productos.length} registros`);
+
+    // Información del reporte
+    yPos += 20;
+    doc.fillColor('#000000').fontSize(12).font('Helvetica-Bold').fillColor('#667eea')
+       .text('Información del Reporte', 50, yPos);
     
-    doc.rect(370, 50, 192, 60).fill('#6B9BD1');
-    doc.fontSize(9).fillColor('#FFFFFF')
-       .text(`${req.user.nombre}`, 380, 58, { width: 172 })
-       .text(req.user.direccion || 'Sin dirección', 380, 74, { width: 172 })
-       .text(req.user.telefono ? `Tel: ${req.user.telefono}` : 'Sin teléfono', 380, 90, { width: 172 });
+    yPos += 25;
+    doc.fontSize(10).font('Helvetica').fillColor('#000000')
+       .text(`Generado por: ${req.user.nombre}`, 50, yPos)
+       .text(`Total de registros: ${productos.length}`, 50, yPos + 15)
+       .text(`Fecha: ${formatDate(new Date())}`, 50, yPos + 30);
 
-    doc.fillColor('#000000').fontSize(18).text('Reporte de Productos', 50, 130, { align: 'center' });
-
-    const detallesY = 180;
-    doc.rect(50, detallesY, 200, 120).fill('#6B9BD1');
-    doc.fillColor('#FFFFFF')
-       .text('Detalles del reporte', 100, detallesY + 10)
-       .text(`Generado: ${formatDate(new Date())}`, 70, detallesY + 30)
-       .text(`Total de registros: ${productos.length}`, 70, detallesY + 50)
-       .text('Tipo: Productos', 70, detallesY + 70);
-
-    const tableTop = 330;
+    // Tabla
+    yPos += 70;
+    const tableTop = yPos;
     const itemHeight = 25;
     
-    doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
-    doc.text('ID', 50, tableTop);
-    doc.text('Nombre', 100, tableTop);
-    doc.text('Tipo', 250, tableTop);
-    doc.text('Precio', 350, tableTop);
-    doc.text('Unidad', 430, tableTop);
-    
-    doc.moveTo(50, tableTop + 15).lineTo(560, tableTop + 15).stroke();
+    // Encabezado de tabla con estilo
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#FFFFFF');
+    doc.rect(50, tableTop, 512, 25).fill('#667eea');
+    doc.text('ID', 60, tableTop + 8, { width: 30 });
+    doc.text('Nombre', 100, tableTop + 8, { width: 140 });
+    doc.text('Tipo', 250, tableTop + 8, { width: 90 });
+    doc.text('Precio', 350, tableTop + 8, { width: 70 });
+    doc.text('Unidad', 430, tableTop + 8, { width: 122 });
 
-    doc.font('Helvetica').fontSize(9);
+    // Filas con alternancia de color
+    doc.font('Helvetica').fontSize(9).fillColor('#000000');
     productos.forEach((producto, i) => {
-      const y = tableTop + 20 + (i * itemHeight);
+      const y = tableTop + 25 + (i * itemHeight);
       if (y > 750) return;
-      doc.text(producto.id, 50, y);
-      doc.text(producto.nombre || '-', 100, y, { width: 140 });
-      doc.text(producto.tipo || '-', 250, y);
-      doc.text(`$${producto.precio || 0}`, 350, y);
-      doc.text(producto.unidad || '-', 430, y);
+      
+      if (i % 2 === 1) {
+        doc.rect(50, y, 512, itemHeight).fill('#f7fafc');
+      }
+      
+      doc.fillColor('#000000')
+         .text(producto.id, 60, y + 8, { width: 30 })
+         .text(producto.nombre || '-', 100, y + 8, { width: 140 })
+         .text(producto.tipo || '-', 250, y + 8, { width: 90 })
+         .text(`RD$ ${parseFloat(producto.precio || 0).toFixed(2)}`, 350, y + 8, { width: 70 })
+         .text(producto.unidad || '-', 430, y + 8, { width: 122 });
     });
+    
+    // Borde de tabla
+    const tableHeight = Math.min(productos.length * itemHeight + 25, 750 - tableTop);
+    doc.rect(50, tableTop, 512, tableHeight).stroke('#e2e8f0');
 
     doc.end();
   } catch (error) {
@@ -229,45 +265,53 @@ router.get('/almacenes', authenticateToken, authorize(['admin', 'empleado']), as
     res.setHeader('Content-Disposition', 'attachment; filename=reporte_almacenes.pdf');
     doc.pipe(res);
 
-    doc.rect(50, 50, 180, 60).fill('#6B9BD1');
-    doc.fontSize(16).fillColor('#FFFFFF').text('Logo', 110, 73);
+    // Header consistente
+    let yPos = createReportHeader(doc, 'REPORTE DE ALMACENES', `Total: ${almacenes.length} registros`);
+
+    // Información del reporte
+    yPos += 20;
+    doc.fillColor('#000000').fontSize(12).font('Helvetica-Bold').fillColor('#667eea')
+       .text('Información del Reporte', 50, yPos);
     
-    doc.rect(370, 50, 192, 60).fill('#6B9BD1');
-    doc.fontSize(9).fillColor('#FFFFFF')
-       .text(`${req.user.nombre}`, 380, 58, { width: 172 })
-       .text(req.user.direccion || 'Sin dirección', 380, 74, { width: 172 })
-       .text(req.user.telefono ? `Tel: ${req.user.telefono}` : 'Sin teléfono', 380, 90, { width: 172 });
+    yPos += 25;
+    doc.fontSize(10).font('Helvetica').fillColor('#000000')
+       .text(`Generado por: ${req.user.nombre}`, 50, yPos)
+       .text(`Total de registros: ${almacenes.length}`, 50, yPos + 15)
+       .text(`Fecha: ${formatDate(new Date())}`, 50, yPos + 30);
 
-    doc.fillColor('#000000').fontSize(18).text('Reporte de Almacenes', 50, 130, { align: 'center' });
-
-    const detallesY = 180;
-    doc.rect(50, detallesY, 200, 120).fill('#6B9BD1');
-    doc.fillColor('#FFFFFF')
-       .text('Detalles del reporte', 100, detallesY + 10)
-       .text(`Generado: ${formatDate(new Date())}`, 70, detallesY + 30)
-       .text(`Total de registros: ${almacenes.length}`, 70, detallesY + 50)
-       .text('Tipo: Almacenes', 70, detallesY + 70);
-
-    const tableTop = 330;
+    // Tabla
+    yPos += 70;
+    const tableTop = yPos;;
     const itemHeight = 25;
     
-    doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
-    doc.text('ID', 50, tableTop);
-    doc.text('Nombre', 100, tableTop);
-    doc.text('Ubicación', 250, tableTop);
-    doc.text('Capacidad Total', 380, tableTop);
-    
-    doc.moveTo(50, tableTop + 15).lineTo(560, tableTop + 15).stroke();
+    // Encabezado de tabla con estilo
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#FFFFFF');
+    doc.rect(50, tableTop, 512, 25).fill('#667eea');
+    doc.text('ID', 60, tableTop + 8, { width: 30 });
+    doc.text('Nombre', 100, tableTop + 8, { width: 140 });
+    doc.text('Ubicación', 250, tableTop + 8, { width: 120 });
+    doc.text('Capacidad Total', 380, tableTop + 8, { width: 172 });
 
-    doc.font('Helvetica').fontSize(9);
+    // Filas con alternancia de color
+    doc.font('Helvetica').fontSize(9).fillColor('#000000');
     almacenes.forEach((almacen, i) => {
-      const y = tableTop + 20 + (i * itemHeight);
+      const y = tableTop + 25 + (i * itemHeight);
       if (y > 750) return;
-      doc.text(almacen.id, 50, y);
-      doc.text(almacen.nombre || '-', 100, y, { width: 140 });
-      doc.text(almacen.ubicacion || '-', 250, y, { width: 120 });
-      doc.text(almacen.capacidad_total || '0', 380, y);
+      
+      if (i % 2 === 1) {
+        doc.rect(50, y, 512, itemHeight).fill('#f7fafc');
+      }
+      
+      doc.fillColor('#000000')
+         .text(almacen.id, 60, y + 8, { width: 30 })
+         .text(almacen.nombre || '-', 100, y + 8, { width: 140 })
+         .text(almacen.ubicacion || '-', 250, y + 8, { width: 120 })
+         .text(`${parseFloat(almacen.capacidad_total || 0).toFixed(2)} ${almacen.unidad_capacidad || 'L'}`, 380, y + 8, { width: 172 });
     });
+    
+    // Borde de tabla
+    const tableHeight = Math.min(almacenes.length * itemHeight + 25, 750 - tableTop);
+    doc.rect(50, tableTop, 512, tableHeight).stroke('#e2e8f0');
 
     doc.end();
   } catch (error) {
@@ -290,47 +334,55 @@ router.get('/choferes', authenticateToken, authorize(['admin', 'empleado', 'tran
     res.setHeader('Content-Disposition', 'attachment; filename=reporte_choferes.pdf');
     doc.pipe(res);
 
-    doc.rect(50, 50, 180, 60).fill('#6B9BD1');
-    doc.fontSize(16).fillColor('#FFFFFF').text('Logo', 110, 73);
+    // Header consistente
+    let yPos = createReportHeader(doc, 'REPORTE DE CHOFERES', `Total: ${choferes.length} registros`);
+
+    // Información del reporte
+    yPos += 20;
+    doc.fillColor('#000000').fontSize(12).font('Helvetica-Bold').fillColor('#667eea')
+       .text('Información del Reporte', 50, yPos);
     
-    doc.rect(370, 50, 192, 60).fill('#6B9BD1');
-    doc.fontSize(9).fillColor('#FFFFFF')
-       .text(`${req.user.nombre}`, 380, 58, { width: 172 })
-       .text(req.user.direccion || 'Sin dirección', 380, 74, { width: 172 })
-       .text(req.user.telefono ? `Tel: ${req.user.telefono}` : 'Sin teléfono', 380, 90, { width: 172 });
+    yPos += 25;
+    doc.fontSize(10).font('Helvetica').fillColor('#000000')
+       .text(`Generado por: ${req.user.nombre}`, 50, yPos)
+       .text(`Total de registros: ${choferes.length}`, 50, yPos + 15)
+       .text(`Fecha: ${formatDate(new Date())}`, 50, yPos + 30);
 
-    doc.fillColor('#000000').fontSize(18).text('Reporte de Choferes', 50, 130, { align: 'center' });
-
-    const detallesY = 180;
-    doc.rect(50, detallesY, 200, 120).fill('#6B9BD1');
-    doc.fillColor('#FFFFFF')
-       .text('Detalles del reporte', 100, detallesY + 10)
-       .text(`Generado: ${formatDate(new Date())}`, 70, detallesY + 30)
-       .text(`Total de registros: ${choferes.length}`, 70, detallesY + 50)
-       .text('Tipo: Choferes', 70, detallesY + 70);
-
-    const tableTop = 330;
+    // Tabla
+    yPos += 70;
+    const tableTop = yPos;
     const itemHeight = 25;
     
-    doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
-    doc.text('ID', 50, tableTop);
-    doc.text('Nombre', 100, tableTop);
-    doc.text('Cédula', 230, tableTop);
-    doc.text('Licencia', 330, tableTop);
-    doc.text('Placa', 430, tableTop);
-    
-    doc.moveTo(50, tableTop + 15).lineTo(560, tableTop + 15).stroke();
+    // Encabezado de tabla con estilo
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#FFFFFF');
+    doc.rect(50, tableTop, 512, 25).fill('#667eea');
+    doc.text('ID', 60, tableTop + 8, { width: 30 });
+    doc.text('Nombre', 100, tableTop + 8, { width: 120 });
+    doc.text('Cédula', 230, tableTop + 8, { width: 90 });
+    doc.text('Licencia', 330, tableTop + 8, { width: 90 });
+    doc.text('Placa', 430, tableTop + 8, { width: 122 });
 
-    doc.font('Helvetica').fontSize(9);
+    // Filas con alternancia de color
+    doc.font('Helvetica').fontSize(9).fillColor('#000000');
     choferes.forEach((chofer, i) => {
-      const y = tableTop + 20 + (i * itemHeight);
+      const y = tableTop + 25 + (i * itemHeight);
       if (y > 750) return;
-      doc.text(chofer.id, 50, y);
-      doc.text(chofer.nombre || '-', 100, y, { width: 120 });
-      doc.text(chofer.cedula || '-', 230, y);
-      doc.text(chofer.licencia || '-', 330, y);
-      doc.text(chofer.vehiculo_placa || '-', 430, y);
+      
+      if (i % 2 === 1) {
+        doc.rect(50, y, 512, itemHeight).fill('#f7fafc');
+      }
+      
+      doc.fillColor('#000000')
+         .text(chofer.id, 60, y + 8, { width: 30 })
+         .text(chofer.nombre || '-', 100, y + 8, { width: 120 })
+         .text(chofer.cedula || '-', 230, y + 8, { width: 90 })
+         .text(chofer.licencia || '-', 330, y + 8, { width: 90 })
+         .text(chofer.vehiculo_placa || '-', 430, y + 8, { width: 122 });
     });
+    
+    // Borde de tabla
+    const tableHeight = Math.min(choferes.length * itemHeight + 25, 750 - tableTop);
+    doc.rect(50, tableTop, 512, tableHeight).stroke('#e2e8f0');
 
     doc.end();
   } catch (error) {
@@ -358,45 +410,53 @@ router.get('/ordenes', authenticateToken, authorize(['admin', 'empleado', 'clien
     res.setHeader('Content-Disposition', 'attachment; filename=reporte_ordenes.pdf');
     doc.pipe(res);
 
-    doc.rect(50, 50, 180, 60).fill('#6B9BD1');
-    doc.fontSize(16).fillColor('#FFFFFF').text('Logo', 110, 73);
+    // Header consistente
+    let yPos = createReportHeader(doc, 'REPORTE DE ÓRDENES', `Total: ${ordenes.length} registros`);
+
+    // Información del reporte
+    yPos += 20;
+    doc.fillColor('#000000').fontSize(12).font('Helvetica-Bold').fillColor('#667eea')
+       .text('Información del Reporte', 50, yPos);
     
-    doc.rect(370, 50, 192, 60).fill('#6B9BD1');
-    doc.fontSize(9).fillColor('#FFFFFF')
-       .text(`${req.user.nombre}`, 380, 58, { width: 172 })
-       .text(req.user.direccion || 'Sin dirección', 380, 74, { width: 172 })
-       .text(req.user.telefono ? `Tel: ${req.user.telefono}` : 'Sin teléfono', 380, 90, { width: 172 });
+    yPos += 25;
+    doc.fontSize(10).font('Helvetica').fillColor('#000000')
+       .text(`Generado por: ${req.user.nombre}`, 50, yPos)
+       .text(`Total de registros: ${ordenes.length}`, 50, yPos + 15)
+       .text(`Fecha: ${formatDate(new Date())}`, 50, yPos + 30);
 
-    doc.fillColor('#000000').fontSize(18).text('Reporte de Órdenes', 50, 130, { align: 'center' });
-
-    const detallesY = 180;
-    doc.rect(50, detallesY, 200, 120).fill('#6B9BD1');
-    doc.fillColor('#FFFFFF')
-       .text('Detalles del reporte', 100, detallesY + 10)
-       .text(`Generado: ${formatDate(new Date())}`, 70, detallesY + 30)
-       .text(`Total de registros: ${ordenes.length}`, 70, detallesY + 50)
-       .text('Tipo: Órdenes', 70, detallesY + 70);
-
-    const tableTop = 330;
+    // Tabla
+    yPos += 70;
+    const tableTop = yPos;
     const itemHeight = 30;
     
-    doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold');
-    doc.text('ID', 50, tableTop);
-    doc.text('Producto', 90, tableTop);
-    doc.text('Volumen', 200, tableTop);
-    doc.text('Dirección', 270, tableTop);
-    
-    doc.moveTo(50, tableTop + 15).lineTo(560, tableTop + 15).stroke();
+    // Encabezado de tabla con estilo
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#FFFFFF');
+    doc.rect(50, tableTop, 512, 25).fill('#667eea');
+    doc.text('ID', 60, tableTop + 8, { width: 30 });
+    doc.text('Producto', 100, tableTop + 8, { width: 110 });
+    doc.text('Volumen', 220, tableTop + 8, { width: 60 });
+    doc.text('Dirección', 290, tableTop + 8, { width: 262 });
 
-    doc.font('Helvetica').fontSize(8);
+    // Filas con alternancia de color
+    doc.font('Helvetica').fontSize(9).fillColor('#000000');
     ordenes.forEach((orden, i) => {
-      const y = tableTop + 20 + (i * itemHeight);
+      const y = tableTop + 25 + (i * itemHeight);
       if (y > 750) return;
-      doc.text(orden.id, 50, y);
-      doc.text(orden.producto_nombre || '-', 90, y, { width: 100 });
-      doc.text(orden.volumen_solicitado || '0', 200, y);
-      doc.text(orden.ubicacion_entrega || '-', 270, y, { width: 280 });
+      
+      if (i % 2 === 1) {
+        doc.rect(50, y, 512, itemHeight).fill('#f7fafc');
+      }
+      
+      doc.fillColor('#000000')
+         .text(orden.id, 60, y + 8, { width: 30 })
+         .text(orden.producto_nombre || '-', 100, y + 8, { width: 110 })
+         .text(`${parseFloat(orden.volumen_solicitado || 0).toFixed(2)}`, 220, y + 8, { width: 60 })
+         .text(orden.ubicacion_entrega || '-', 290, y + 8, { width: 262 });
     });
+    
+    // Borde de tabla
+    const tableHeight = Math.min(ordenes.length * itemHeight + 25, 750 - tableTop);
+    doc.rect(50, tableTop, 512, tableHeight).stroke('#e2e8f0');
 
     doc.end();
   } catch (error) {
@@ -465,25 +525,47 @@ router.get('/factura/:ordenId', authenticateToken, async (req, res) => {
        .text(`Teléfono: ${orden.cliente_telefono || 'N/A'}`, 50, yPos + 30)
        .text(`Dirección: ${orden.cliente_direccion || 'N/A'}`, 50, yPos + 45);
 
-    // Detalles de la orden
+    // Detalles de la orden - TABLA
     yPos += 90;
-    doc.fontSize(14).font('Helvetica-Bold')
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#667eea')
        .text('Detalles de la Orden', 50, yPos);
 
+    yPos += 30;
+    // Encabezado de tabla
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#FFFFFF');
+    doc.rect(50, yPos, 512, 25).fill('#667eea');
+    doc.text('Campo', 60, yPos + 8, { width: 200 });
+    doc.text('Información', 270, yPos + 8, { width: 282 });
+    
     yPos += 25;
-    doc.fontSize(10).font('Helvetica')
-       .text(`Producto: ${orden.producto_nombre} (${orden.producto_tipo})`, 50, yPos)
-       .text(`Unidad: ${orden.producto_unidad}`, 50, yPos + 15)
-       .text(`Cantidad: ${orden.volumen_solicitado} ${orden.producto_unidad}(s)`, 50, yPos + 30)
-       .text(`Ubicación de Entrega: ${orden.ubicacion_entrega}`, 50, yPos + 45)
-       .text(`Almacén: ${orden.almacen_nombre} - ${orden.almacen_ubicacion || ''}`, 50, yPos + 60)
-       .text(`Chofer: ${orden.chofer_nombre || 'No asignado'}`, 50, yPos + 75)
-       .text(`Método de Pago: ${orden.payment_method || 'No especificado'}`, 50, yPos + 90)
-       .text(`Estado: ${orden.estado}`, 50, yPos + 105)
-       .text(`Pagado: ${orden.pagado ? 'Sí' : 'No'}`, 50, yPos + 120);
+    // Filas de la tabla
+    const detalles = [
+      ['Producto', `${orden.producto_nombre} (${orden.producto_tipo})`],
+      ['Cantidad', `${orden.volumen_solicitado.toFixed(2)} ${orden.producto_unidad}(s)`],
+      ['Ubicación de Entrega', orden.ubicacion_entrega],
+      ['Almacén', `${orden.almacen_nombre} - ${orden.almacen_ubicacion || ''}`],
+      ['Chofer', orden.chofer_nombre || 'No asignado'],
+      ['Método de Pago', orden.payment_method || 'No especificado'],
+      ['Estado', orden.estado],
+      ['Pagado', orden.pagado ? 'Sí' : 'No']
+    ];
+    
+    doc.fontSize(9).font('Helvetica').fillColor('#000000');
+    let alternate = false;
+    detalles.forEach(([campo, valor]) => {
+      if (alternate) {
+        doc.rect(50, yPos, 512, 20).fill('#f7fafc');
+      }
+      doc.fillColor('#000000')
+         .font('Helvetica-Bold').text(campo, 60, yPos + 6, { width: 200 })
+         .font('Helvetica').text(valor, 270, yPos + 6, { width: 282 });
+      yPos += 20;
+      alternate = !alternate;
+    });
+    doc.rect(50, yPos - 160, 512, 160).stroke('#e2e8f0');
 
     // Desglose de costos
-    yPos += 160;
+    yPos += 10;
     doc.rect(50, yPos, 512, 150).stroke('#e2e8f0');
     
     yPos += 20;

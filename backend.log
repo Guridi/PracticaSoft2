@@ -1,0 +1,14 @@
+
+> backend@1.0.0 start
+> node server.js
+
+
+🚀 Servidor backend corriendo en http://localhost:3000
+📊 Health check: http://localhost:3000/api/health
+🔐 Auth endpoints:
+   - POST http://localhost:3000/api/auth/register
+   - POST http://localhost:3000/api/auth/login
+   - GET  http://localhost:3000/api/auth/profile (protegido)
+
+Connected to SQLite database
+Users table ready

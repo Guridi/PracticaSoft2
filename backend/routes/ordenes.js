@@ -76,10 +76,17 @@ router.post('/', authenticateToken, authorize(['admin', 'empleado', 'cliente']),
     Promise.resolve(almacen_id) : 
     new Promise((resolve, reject) => {
       db.get(
-        `SELECT almacen_id, cantidad 
-         FROM inventario_almacen 
-         WHERE producto_id = ? AND cantidad >= ?
-         ORDER BY cantidad DESC 
+        `SELECT 
+          ia.almacen_id, 
+          ia.cantidad,
+          COALESCE(SUM(CASE WHEN o.estado IN ('pendiente', 'en_proceso') THEN o.volumen_solicitado ELSE 0 END), 0) as usado,
+          (ia.cantidad - COALESCE(SUM(CASE WHEN o.estado IN ('pendiente', 'en_proceso') THEN o.volumen_solicitado ELSE 0 END), 0)) as disponible
+         FROM inventario_almacen ia
+         LEFT JOIN ordenes o ON o.almacen_id = ia.almacen_id AND o.producto_id = ia.producto_id
+         WHERE ia.producto_id = ?
+         GROUP BY ia.almacen_id, ia.cantidad
+         HAVING disponible >= ?
+         ORDER BY disponible DESC 
          LIMIT 1`,
         [producto_id, volumen_solicitado],
         (err, row) => {
@@ -109,17 +116,24 @@ router.post('/', authenticateToken, authorize(['admin', 'empleado', 'cliente']),
     .then(([selectedAlmacenId, selectedPrecio]) => {
       // Verificar disponibilidad del producto en el almacén seleccionado
       db.get(
-        'SELECT cantidad FROM inventario_almacen WHERE almacen_id = ? AND producto_id = ?',
+        `SELECT 
+          ia.cantidad,
+          COALESCE(SUM(CASE WHEN o.estado IN ('pendiente', 'en_proceso') THEN o.volumen_solicitado ELSE 0 END), 0) as usado,
+          (ia.cantidad - COALESCE(SUM(CASE WHEN o.estado IN ('pendiente', 'en_proceso') THEN o.volumen_solicitado ELSE 0 END), 0)) as disponible
+         FROM inventario_almacen ia
+         LEFT JOIN ordenes o ON o.almacen_id = ia.almacen_id AND o.producto_id = ia.producto_id
+         WHERE ia.almacen_id = ? AND ia.producto_id = ?
+         GROUP BY ia.cantidad`,
         [selectedAlmacenId, producto_id],
         (err, inventario) => {
           if (err) {
             return res.status(500).json({ success: false, message: 'Error al verificar inventario' });
           }
 
-          if (!inventario || inventario.cantidad < volumen_solicitado) {
+          if (!inventario || inventario.disponible < volumen_solicitado) {
             return res.status(400).json({ 
               success: false, 
-              message: `Producto insuficiente en almacén. Disponible: ${inventario ? inventario.cantidad : 0}` 
+              message: `Producto insuficiente en almacén. Disponible: ${inventario ? inventario.disponible : 0}` 
             });
           }
 

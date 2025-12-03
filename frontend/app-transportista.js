@@ -127,7 +127,7 @@ createApp({
         
         // Preparar datos para actualizar
         const updateData = {
-          cliente_id: orden.cliente_id,
+          user_id: orden.user_id,
           producto_id: orden.producto_id,
           delivery_id: orden.delivery_id,
           almacen_id: orden.almacen_id,

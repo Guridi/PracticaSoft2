@@ -142,14 +142,14 @@ createApp({
                 this.selectedProducto.unidad
             );
 
-            // Calcular subtotal basado en la cantidad original y el precio
-            this.calculatedSubtotal = parseFloat(this.newOrder.cantidad) * parseFloat(this.selectedProducto.precio);
+            // Calcular subtotal basado en la cantidad original y el precio (redondeado a 2 decimales)
+            this.calculatedSubtotal = parseFloat((parseFloat(this.newOrder.cantidad) * parseFloat(this.selectedProducto.precio)).toFixed(2));
             
             // Calcular ITBIS (18%)
-            this.calculatedITBIS = this.calculatedSubtotal * 0.18;
+            this.calculatedITBIS = parseFloat((this.calculatedSubtotal * 0.18).toFixed(2));
             
             // Total
-            this.calculatedTotal = this.calculatedSubtotal + this.calculatedITBIS;
+            this.calculatedTotal = parseFloat((this.calculatedSubtotal + this.calculatedITBIS).toFixed(2));
         },
 
         createOrder() {
@@ -191,11 +191,12 @@ createApp({
                 const orderData = {
                     user_id: this.userId,
                     producto_id: this.newOrder.producto_id,
-                    volumen_solicitado: this.volumenEnLitros,
+                    volumen_solicitado: parseFloat(this.volumenEnLitros.toFixed(2)),
                     ubicacion_entrega: this.newOrder.ubicacion_entrega,
                     estado: 'pendiente',
-                    precio_unitario: this.selectedProducto.precio,
-                    payment_method: this.paymentMethod
+                    precio_unitario: parseFloat(this.selectedProducto.precio.toFixed(2)),
+                    payment_method: this.paymentMethod,
+                    pagado: 1
                 };
 
                 if (this.newOrder.notas) {
